@@ -237,7 +237,7 @@ Android accessibility checks.
 - [Design documentation](docs/design/README.md)
 - [Testing documentation](docs/testing/README.md)
 - [Release documentation](docs/release/README.md)
-- [Contribution workflow](CONTRIBUTING.md) *(planned)*
+- [Contribution workflow](CONTRIBUTING.md)
 - [Backend README](src/backend/README.md)
 - [Matching-service README](src/matching-service/README.md)
 - [Mobile README](src/mobile/README.md)
