@@ -1,0 +1,365 @@
+// AdoptAJob PostgreSQL schema.
+//
+// The backend is the single owner of this schema and its migrations. The
+// matching service reads these tables through a read-only role, so table and
+// column names are mapped to snake_case for plain SQL access.
+//
+// Ranking must not use protected attributes (REQ-COMP-004): the schema
+// deliberately stores no gender, birth date, age, ethnicity, nationality,
+// religion, disability, marital status or candidate photo.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../node_modules/.generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  CANDIDATE
+  RECRUITER
+
+  @@map("role")
+}
+
+enum TagType {
+  SKILL
+  ROLE
+  SECTOR
+  LOCATION
+  CONTRACT
+
+  @@map("tag_type")
+}
+
+enum EducationLevel {
+  NONE
+  SECONDARY
+  VOCATIONAL
+  BACHELOR
+  MASTER
+  DOCTORATE
+
+  @@map("education_level")
+}
+
+enum ContractType {
+  FULL_TIME
+  PART_TIME
+  INTERNSHIP
+  TEMPORARY
+  FREELANCE
+
+  @@map("contract_type")
+}
+
+enum CardKind {
+  COMPANY
+  JOB
+
+  @@map("card_kind")
+}
+
+enum CardStatus {
+  DRAFT
+  PUBLISHED
+  UNPUBLISHED
+
+  @@map("card_status")
+}
+
+enum SwipeAction {
+  LIKE
+  PASS
+
+  @@map("swipe_action")
+}
+
+enum RecruiterDecision {
+  PENDING
+  ACCEPTED
+  DECLINED
+
+  @@map("recruiter_decision")
+}
+
+enum FlagKind {
+  GREEN
+  RED
+
+  @@map("flag_kind")
+}
+
+enum ReportTarget {
+  CARD
+  USER
+  MESSAGE
+
+  @@map("report_target")
+}
+
+// ---------------------------------------------------------------------------
+// Accounts and companies (REQ-FUNC-001..004, REQ-SEC-001, REQ-COMP-001)
+// ---------------------------------------------------------------------------
+
+model User {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // Stored lower-cased by the backend so uniqueness is case-insensitive.
+  email                String   @unique @db.VarChar(254)
+  // Adaptive hash only (bcrypt, scrypt or Argon2); never the plain password.
+  passwordHash         String   @map("password_hash")
+  role                 Role
+  displayName          String?  @map("display_name") @db.VarChar(100)
+  // Recruiters belong to one company; several recruiters may share it.
+  companyId            String?  @map("company_id") @db.Uuid
+  privacyConsentAt     DateTime @map("privacy_consent_at") @db.Timestamptz(3)
+  privacyNoticeVersion String   @map("privacy_notice_version") @db.VarChar(20)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company          Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  candidateProfile CandidateProfile?
+  cardsCreated     Card[]            @relation("CardCreatedBy")
+  swipes           Swipe[]
+  flags            Flag[]
+  candidateMatches Match[]           @relation("MatchCandidate")
+  recruiterMatches Match[]           @relation("MatchRecruiter")
+  messages         Message[]
+  reports          Report[]
+
+  @@index([companyId])
+  @@map("users")
+}
+
+model Company {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(120)
+  // Sector is also attached to cards as a SECTOR tag for ranking (REQ-ML-002).
+  sector    String   @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  recruiters User[]
+  cards      Card[]
+
+  @@map("companies")
+}
+
+// ---------------------------------------------------------------------------
+// Candidate background (REQ-FUNC-005, REQ-FUNC-006)
+// ---------------------------------------------------------------------------
+
+// Every field is optional so a candidate can skip onboarding entirely.
+// Desired roles, skills, preferred locations and contract types are stored
+// as tags in candidate_tags.
+model CandidateProfile {
+  userId          String          @id @map("user_id") @db.Uuid
+  educationLevel  EducationLevel? @map("education_level")
+  yearsExperience Int?            @map("years_experience") @db.SmallInt
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags CandidateTag[]
+
+  @@map("candidate_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// Tags (fixed vocabulary loaded by the seed)
+// ---------------------------------------------------------------------------
+
+model Tag {
+  id    Int     @id @default(autoincrement())
+  type  TagType
+  // Normalised slug, e.g. "react-native" or "barcelona".
+  slug  String  @db.VarChar(60)
+  label String  @db.VarChar(80)
+
+  cards      CardTag[]
+  candidates CandidateTag[]
+
+  @@unique([type, slug])
+  @@map("tags")
+}
+
+model CardTag {
+  cardId String @map("card_id") @db.Uuid
+  tagId  Int    @map("tag_id")
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, tagId])
+  @@index([tagId])
+  @@map("card_tags")
+}
+
+model CandidateTag {
+  candidateId String @map("candidate_id") @db.Uuid
+  tagId       Int    @map("tag_id")
+
+  candidate CandidateProfile @relation(fields: [candidateId], references: [userId], onDelete: Cascade)
+  tag       Tag              @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([candidateId, tagId])
+  @@index([tagId])
+  @@map("candidate_tags")
+}
+
+// ---------------------------------------------------------------------------
+// Recruiter cards (REQ-FUNC-008..010)
+// ---------------------------------------------------------------------------
+
+// Job cards require title, description, location, contract type and at least
+// one tag; the backend enforces this because company cards do not.
+model Card {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId      String        @map("company_id") @db.Uuid
+  createdById    String?       @map("created_by_id") @db.Uuid
+  kind           CardKind
+  status         CardStatus    @default(DRAFT)
+  title          String        @db.VarChar(120)
+  description    String        @db.VarChar(2000)
+  location       String?       @db.VarChar(120)
+  contractType   ContractType? @map("contract_type")
+  salaryMin      Int?          @map("salary_min")
+  salaryMax      Int?          @map("salary_max")
+  // ISO 4217 code, e.g. "EUR".
+  salaryCurrency String?       @map("salary_currency") @db.Char(3)
+  perks          String[]      @default([])
+  imageUrl       String?       @map("image_url") @db.VarChar(500)
+  publishedAt    DateTime?     @map("published_at") @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation("CardCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  tags      CardTag[]
+  swipes    Swipe[]
+  flags     Flag[]
+  matches   Match[]
+
+  @@index([companyId])
+  // Feed and most-recent fallback (REQ-FUNC-011, REQ-REL-002, REQ-ML-002).
+  @@index([status, publishedAt(sort: Desc)])
+  @@map("cards")
+}
+
+// ---------------------------------------------------------------------------
+// Feed signals (REQ-FUNC-011..017, REQ-REL-001, REQ-ML-001..004)
+// ---------------------------------------------------------------------------
+
+// One swipe per candidate and card. The unique key makes repeated requests
+// idempotent (REQ-REL-001). Likes carry the recruiter decision; passes keep it
+// null.
+model Swipe {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  candidateId String             @map("candidate_id") @db.Uuid
+  cardId      String             @map("card_id") @db.Uuid
+  action      SwipeAction
+  decision    RecruiterDecision?
+  decidedAt   DateTime?          @map("decided_at") @db.Timestamptz(3)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  candidate User @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  card      Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, cardId])
+  // Interested-candidates list per card (REQ-FUNC-016).
+  @@index([cardId, action, decision])
+  @@map("swipes")
+}
+
+// Flags are separate from swipes: a candidate may flag a card and still like
+// or pass it. Green-flagged cards stay in the feed; red-flagged cards leave it.
+model Flag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  candidateId String   @map("candidate_id") @db.Uuid
+  cardId      String   @map("card_id") @db.Uuid
+  kind        FlagKind
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  candidate User @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  card      Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, cardId])
+  @@index([cardId])
+  @@map("flags")
+}
+
+// ---------------------------------------------------------------------------
+// Matching and connecting (REQ-FUNC-017..023)
+// ---------------------------------------------------------------------------
+
+// Created only when a recruiter accepts a like (REQ-ML-006).
+model Match {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  candidateId String    @map("candidate_id") @db.Uuid
+  recruiterId String    @map("recruiter_id") @db.Uuid
+  cardId      String    @map("card_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  // Set when either party unmatches (REQ-FUNC-022); the chat is then closed.
+  endedAt     DateTime? @map("ended_at") @db.Timestamptz(3)
+
+  candidate   User         @relation("MatchCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
+  recruiter   User         @relation("MatchRecruiter", fields: [recruiterId], references: [id], onDelete: Cascade)
+  card        Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  application Application?
+
+  @@unique([candidateId, cardId])
+  @@index([recruiterId, createdAt(sort: Desc)])
+  @@index([candidateId, createdAt(sort: Desc)])
+  @@map("matches")
+}
+
+model Message {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matchId   String   @map("match_id") @db.Uuid
+  senderId  String   @map("sender_id") @db.Uuid
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  match  Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender User  @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, createdAt])
+  @@map("messages")
+}
+
+// The CV file itself lives outside the database; only its storage key and
+// size are recorded (max 5 MB, REQ-FUNC-021).
+model Application {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matchId      String   @unique @map("match_id") @db.Uuid
+  message      String   @db.VarChar(2000)
+  cvStorageKey String?  @map("cv_storage_key") @db.VarChar(300)
+  cvSizeBytes  Int?     @map("cv_size_bytes")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("applications")
+}
+
+// targetId points to a card, user or message depending on targetType; it has
+// no foreign key so a report survives the deletion of its target.
+model Report {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporterId String       @map("reporter_id") @db.Uuid
+  targetType ReportTarget @map("target_type")
+  targetId   String       @map("target_id") @db.Uuid
+  reason     String       @db.VarChar(500)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([targetType, targetId])
+  @@map("reports")
+}
