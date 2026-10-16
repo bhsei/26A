@@ -73,18 +73,6 @@ Run from the repository root unless stated otherwise.
 
 ## Data model
 
-| Table | Purpose | SRS |
-|-------|---------|-----|
-| `users` | Candidates and recruiters, password hash, privacy consent | REQ-FUNC-001..004, REQ-SEC-001, REQ-COMP-001 |
-| `companies` | Company shared by one or more recruiters | REQ-FUNC-003 |
-| `candidate_profiles`, `candidate_tags` | Optional candidate background | REQ-FUNC-005..006 |
-| `tags`, `card_tags` | Fixed tag vocabulary used for ranking | REQ-FUNC-008, REQ-ML-001 |
-| `cards` | Company and job cards with draft/published status | REQ-FUNC-008..011 |
-| `swipes` | One like or pass per candidate and card; likes carry the recruiter decision | REQ-FUNC-011..017, REQ-REL-001 |
-| `flags` | Green and red flags | REQ-FUNC-014..015, REQ-ML-003..004 |
-| `matches`, `messages` | Accepted likes and their chat | REQ-FUNC-017..020, REQ-FUNC-022 |
-| `applications` | Application message and CV reference (file stored outside the DB) | REQ-FUNC-021 |
-| `reports` | User reports for moderation | REQ-FUNC-023 |
-
-Deleting a user cascades to their profile, swipes, flags, matches and
-messages (REQ-FUNC-004). Cards and companies remain.
+The tables, relationships, constraints, indexes and design decisions
+(including the planned Neo4j graph store) are documented in
+[`docs/design/database.md`](../../docs/design/database.md), with a UML diagram.

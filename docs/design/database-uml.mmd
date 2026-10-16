@@ -1,0 +1,93 @@
+---
+title: AdoptAJob PostgreSQL schema (UML class diagram)
+---
+classDiagram
+  direction TB
+  class User {
+    uuid id
+    string email unique
+    string password_hash
+    Role role
+    string display_name
+    uuid company_id
+    datetime privacy_consent_at
+    string privacy_notice_version
+  }
+  class Company {
+    uuid id
+    string name
+    string sector
+  }
+  class CandidateProfile {
+    uuid user_id
+    EducationLevel education_level
+    int years_experience
+  }
+  class Tag {
+    int id
+    TagType type
+    string slug
+    string label
+  }
+  class Card {
+    uuid id
+    CardKind kind
+    CardStatus status
+    string title
+    string description
+    string location
+    ContractType contract_type
+    int salary_min
+    int salary_max
+    string_array perks
+    string image_url
+    datetime published_at
+  }
+  class Swipe {
+    uuid id
+    SwipeAction action
+    RecruiterDecision decision
+    datetime decided_at
+  }
+  class Flag {
+    uuid id
+    FlagKind kind
+  }
+  class Match {
+    uuid id
+    datetime created_at
+    datetime ended_at
+  }
+  class Message {
+    uuid id
+    string body max1000
+  }
+  class Application {
+    uuid id
+    string message
+    string cv_storage_key
+    int cv_size_bytes
+  }
+  class Report {
+    uuid id
+    ReportTarget target_type
+    uuid target_id
+    string reason
+  }
+
+  Company "1" o-- "0..*" User : recruiters
+  User "1" *-- "0..1" CandidateProfile : candidate background
+  Company "1" *-- "0..*" Card : publishes
+  User "0..1" --> "0..*" Card : created by
+  Card "0..*" -- "1..*" Tag : card_tags
+  CandidateProfile "0..*" -- "0..*" Tag : candidate_tags
+  User "1" *-- "0..*" Swipe : candidate
+  Card "1" *-- "0..*" Swipe
+  User "1" *-- "0..*" Flag : candidate
+  Card "1" *-- "0..*" Flag
+  User "1" *-- "0..*" Match : candidate / recruiter
+  Card "1" *-- "0..*" Match
+  Match "1" *-- "0..*" Message
+  User "1" *-- "0..*" Message : sender
+  Match "1" *-- "0..1" Application
+  User "1" *-- "0..*" Report : reporter
