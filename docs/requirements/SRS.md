@@ -1,7 +1,7 @@
 # Software Requirements Specification
 ## For AdoptAJob
 
-Version 0.2  
+Version 0.3  
 Prepared by Qiu Runxiao, Nils Förg, Peter Richard, Levis Bangoh, Jean-Baptiste Grégoire Simon  
 Software Engineering course, Team A (repository `bhsei/26A`)  
 2026-10-10
@@ -38,6 +38,7 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 |------|------|--------------------|---------|
 | Team A | 2026-10-10 | Initial draft: Sections 1 to 5 | 0.1 |
 | Team A | 2026-10-16 | MoSCoW rebalance: REQ-FUNC-003, 004, 020 and REQ-INST-002 lowered to Should; notification split from REQ-FUNC-012 into new REQ-FUNC-024 (Should); REQ-COMP-002 raised to Should to match REQ-FUNC-004; REQ-ML-006 raised to Must; REQ-FUNC-007 reworded to "may" | 0.2 |
+| Team A | 2026-10-16 | Neo4j adopted as a read-only graph store for ranking: updated 2.1 and 2.6, added Neo4j to 1.3, added REQ-ML-007 (graph-based ranking, Should) and REQ-ML-008 (graph data minimisation, Must) | 0.3 |
 |      |      |                    |         |
 
 ## 1. Introduction
@@ -67,6 +68,7 @@ This SRS defines what AdoptAJob shall do and the qualities it shall have. It is 
 | Match | The state reached when a candidate has liked a card and the card's recruiter has accepted that candidate. |
 | MoSCoW | Prioritisation scheme: Must, Should, Could, Won't (this release). |
 | MVP | Minimum Viable Product. |
+| Neo4j | Graph database used as a read-only copy of the main database to find candidates with similar likes (REQ-ML-007). |
 | Pass | A left swipe: the candidate is not interested in the card. |
 | p95 | 95th percentile of a measured value. |
 | Recruiter | A user who represents a company and publishes cards. |
@@ -92,7 +94,7 @@ Section 2 gives the product context, users and constraints. Section 3 contains t
 ## 2. Product Overview
 
 ### 2.1 Product Perspective
-AdoptAJob is a new, standalone product. It is a client-server system made of a mobile app, a backend API, a matching service, and a database. It has no dependency on existing job platforms.
+AdoptAJob is a new, standalone product. It is a client-server system made of a mobile app, a backend API, a matching service, a PostgreSQL database (the source of truth) and a Neo4j graph store, which is a read-only copy of part of the database used for ranking. It has no dependency on existing job platforms.
 
 ```mermaid
 flowchart LR
@@ -102,6 +104,8 @@ flowchart LR
     API --> DB[(Database)]
     API --> MS[Matching service]
     MS --> DB
+    DB -. sync .-> G[(Neo4j graph store)]
+    MS --> G
 ```
 
 ### 2.2 Product Functions
@@ -143,7 +147,7 @@ UI language is English. Basic accessibility (text contrast, readable font sizes,
 | REQ-FUNC-008, 009, 011 to 015 | Backend API, mobile app | Iteration 1 (MVP) |
 | REQ-FUNC-016 to 020, REQ-ML-* | Backend API, matching service, mobile app | Iteration 2 |
 | REQ-FUNC-007, 010, 021 to 024 | Backend API, mobile app | Iteration 3 |
-| Neo4j match graph | Matching service | Deferred (optional) |
+| Neo4j graph store and sync (REQ-ML-007, REQ-ML-008) | Matching service, graph store | Iteration 2 |
 
 ## 3. Requirements
 
@@ -559,11 +563,21 @@ Statement: After a red flag on a card, cards from the same company with the same
 Priority: Must  
 AC: In the next 20 feed cards, no card has the same company and title; the average rank of similar cards worsens.
 
+**REQ-ML-007: Graph-based ranking**  
+Statement: The matching service should raise the score of a card when other candidates who liked at least one of the same cards as the current candidate also liked that card. These relationships shall be read from the Neo4j graph store. If the graph store is unavailable, the matching service shall rank with REQ-ML-001 alone.  
+Priority: Should  
+AC: With synthetic data where candidates A and B both liked card X and B also liked card Y, card Y ranks higher in A's next feed than before B's like; with the graph store stopped, A's feed still loads within the REQ-PERF-001 target.
+
 #### 3.6.2 Data Management
 **REQ-ML-005: Training and evaluation data**  
 Statement: Only synthetic data shall be used for development, evaluation and the public repository. Real user data shall never be exported from the production database for these purposes.  
 Priority: Must (constraint C1)  
 AC: Inspection: the `assets/` and `tests/` folders contain only generated data, with the generator script included.
+
+**REQ-ML-008: Graph data minimisation**  
+Statement: The graph store shall be rebuilt from the main database and shall contain only identifiers, tags, card status and publish date, company sector, and like, pass and flag relationships. It shall contain no names, email addresses, password hashes, messages, CVs or attributes listed in REQ-COMP-004, and a deleted account shall be removed from it within the period set by REQ-FUNC-004.  
+Priority: Must (constraint C3)  
+AC: Inspection of node and relationship properties finds only the listed fields; after a synthetic account is deleted and the sync runs, no node with its identifier exists.
 
 #### 3.6.3 Guardrails
 The feed exclusions are defined in REQ-FUNC-009 and REQ-FUNC-011.
@@ -656,6 +670,8 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 | REQ-ML-004 | T | TC-ML-004 | Planned | |
 | REQ-ML-005 | I | Data folders | Planned | |
 | REQ-ML-006 | I | Code review | Planned | |
+| REQ-ML-007 | T | TC-ML-007 | Planned | |
+| REQ-ML-008 | I, T | TC-ML-008 | Planned | |
 
 ## 5. Appendixes
 
