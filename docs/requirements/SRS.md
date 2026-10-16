@@ -1,7 +1,7 @@
 # Software Requirements Specification
 ## For AdoptAJob
 
-Version 0.1  
+Version 0.2  
 Prepared by Qiu Runxiao, Nils Förg, Peter Richard, Levis Bangoh, Jean-Baptiste Grégoire Simon  
 Software Engineering course, Team A (repository `bhsei/26A`)  
 2026-10-10
@@ -37,6 +37,7 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Name | Date | Reason For Changes | Version |
 |------|------|--------------------|---------|
 | Team A | 2026-10-10 | Initial draft: Sections 1 to 5 | 0.1 |
+| Team A | 2026-10-16 | MoSCoW rebalance: REQ-FUNC-003, 004, 020 and REQ-INST-002 lowered to Should; notification split from REQ-FUNC-012 into new REQ-FUNC-024 (Should); REQ-COMP-002 raised to Should to match REQ-FUNC-004; REQ-ML-006 raised to Must; REQ-FUNC-007 reworded to "may" | 0.2 |
 |      |      |                    |         |
 
 ## 1. Introduction
@@ -141,7 +142,7 @@ UI language is English. Basic accessibility (text contrast, readable font sizes,
 | REQ-FUNC-001 to 006, REQ-SEC-* | Backend API, mobile app | Iteration 1 (MVP) |
 | REQ-FUNC-008, 009, 011 to 015 | Backend API, mobile app | Iteration 1 (MVP) |
 | REQ-FUNC-016 to 020, REQ-ML-* | Backend API, matching service, mobile app | Iteration 2 |
-| REQ-FUNC-007, 010, 021 to 023 | Backend API, mobile app | Iteration 3 |
+| REQ-FUNC-007, 010, 021 to 024 | Backend API, mobile app | Iteration 3 |
 | Neo4j match graph | Matching service | Deferred (optional) |
 
 ## 3. Requirements
@@ -211,12 +212,12 @@ AC: Correct credentials grant access; wrong credentials show a generic error tha
 
 **REQ-FUNC-003: Recruiter company**  
 Statement: On first sign-in, a recruiter shall create or join a company by entering at least the company name and sector.  
-Priority: Must  
+Priority: Should  
 AC: A recruiter cannot publish a card before the company exists.
 
 **REQ-FUNC-004: Account deletion**  
 Statement: The system shall allow a user to delete their account, removing their profile, swipes, flags, matches and messages within 24 hours.  
-Priority: Must (see REQ-COMP-002)  
+Priority: Should (see REQ-COMP-002)  
 AC: After deletion, the user cannot sign in and none of their data is returned by any API endpoint.
 
 #### 3.2.2 Candidate profile
@@ -232,7 +233,7 @@ Priority: Should
 AC: The edited values are saved and used by the next feed request.
 
 **REQ-FUNC-007: Learned preferences view**  
-Statement: The system should show the candidate a summary of the preferences learned from their swipes and flags (for example, the top 5 preferred tags).  
+Statement: The system may show the candidate a summary of the preferences learned from their swipes and flags (for example, the top 5 preferred tags).  
 Priority: Could  
 AC: After at least 10 likes on cards sharing a tag, that tag appears in the summary.
 
@@ -261,7 +262,7 @@ Priority: Must
 AC: After swiping a card, it never appears again in that candidate's feed.
 
 **REQ-FUNC-012: Like**  
-Statement: A right swipe (or Like button) shall record the candidate's interest in the card and notify the card's recruiter in the app.  
+Statement: A right swipe (or Like button) shall record the candidate's interest in the card.  
 Priority: Must  
 AC: The candidate appears in the recruiter's interested-candidates list for that card within 5 seconds.
 
@@ -279,6 +280,11 @@ AC: The card is not added to the recruiter's interested list; similar cards move
 Statement: The system shall let the candidate red-flag a card, which removes it and lowers or excludes similar cards (REQ-ML-004).  
 Priority: Must  
 AC: See REQ-ML-004.
+
+**REQ-FUNC-024: Like notification**  
+Statement: The system shall notify the card's recruiter inside the app when a candidate likes one of their cards (REQ-FUNC-012).  
+Priority: Should  
+AC: The next time the recruiter opens the app (or within 10 seconds if open), a new-interest indicator is shown on the card.
 
 #### 3.2.5 Matching and connecting
 
@@ -304,7 +310,7 @@ AC: Each entry shows the other party's name, the card title and the last message
 
 **REQ-FUNC-020: Chat**  
 Statement: The system shall let the two parties of a match exchange text messages of up to 1,000 characters.  
-Priority: Must  
+Priority: Should  
 AC: A message sent by one party is visible to the other within 5 seconds while both have the chat open; users who are not matched cannot message each other.
 
 **REQ-FUNC-021: Apply**  
@@ -425,7 +431,7 @@ AC: Registration cannot be completed without ticking the consent checkbox; the n
 
 **REQ-COMP-002: Data subject rights**  
 Statement: Users shall be able to export their personal data in JSON format and delete their account (REQ-FUNC-004).  
-Priority: Could  
+Priority: Should  
 AC: The export contains the profile, swipes, flags, matches and messages of the user only.
 
 **REQ-COMP-003: Applicable law**  
@@ -453,7 +459,7 @@ AC: A team member who has never run the project starts it from the README in und
 
 **REQ-INST-002: Seed data**  
 Statement: The project shall include a script that loads synthetic demo data (at least 10 companies, 50 job cards, 10 candidates).  
-Priority: Must  
+Priority: Should  
 AC: After running the script, the feed of a demo candidate is non-empty.
 
 #### 3.5.2 Build and Delivery
@@ -568,7 +574,7 @@ No explanation feature in v1.0. Fairness constraints are defined in REQ-COMP-004
 #### 3.6.5 Human-in-the-Loop
 **REQ-ML-006: Human decision**  
 Statement: The system shall never create a match or reject a candidate automatically; the final decision is always the recruiter's (REQ-FUNC-017).  
-Priority: Should  
+Priority: Must  
 AC: Inspection: no code path creates a match without a recruiter action.
 
 #### 3.6.6 Model Lifecycle and Operations
@@ -610,6 +616,7 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 | REQ-FUNC-021 | T | TC-FUNC-021 | Planned | |
 | REQ-FUNC-022 | T | TC-FUNC-022 | Planned | |
 | REQ-FUNC-023 | T | TC-FUNC-023 | Planned | |
+| REQ-FUNC-024 | T | TC-FUNC-024 | Planned | |
 | REQ-PERF-001 | T (load) | TC-PERF-001 | Planned | |
 | REQ-PERF-002 | T (load) | TC-PERF-002 | Planned | |
 | REQ-PERF-003 | T (manual) | TC-PERF-003 | Planned | |
