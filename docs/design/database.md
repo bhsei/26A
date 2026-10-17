@@ -2,7 +2,7 @@
 ## For AdoptAJob
 
 Version 0.1  
-Prepared by Qiu Runxiao (database owner)  
+Prepared by Alba (Qiu Runxiao), database owner  
 Software Engineering course, Team A (repository `bhsei/26A`)  
 2026-10-16
 
@@ -23,7 +23,7 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 
 | Name | Date | Reason For Changes | Version |
 |------|------|--------------------|---------|
-| Qiu Runxiao | 2026-10-16 | First version: PostgreSQL data model and planned Neo4j graph store | 0.1 |
+| Alba (Qiu Runxiao) | 2026-10-16 | First version: PostgreSQL data model and planned Neo4j graph store | 0.1 |
 
 ## 1. Purpose and Scope
 
@@ -31,7 +31,7 @@ This document describes how AdoptAJob stores its data and why. It covers the
 PostgreSQL schema that is implemented (commit `61ba7d3`) and the Neo4j graph
 store the team has agreed to add.
 
-It complements the [architecture document](software-architecture.md), section
+It complements the [architecture document](Architecture_Design.md), section
 6.2, which asks for tables, indexes, constraints and relationships to be
 documented alongside the schema. The schema itself is code and lives in
 [`src/backend/prisma/schema.prisma`](../../src/backend/prisma/schema.prisma);
@@ -41,7 +41,7 @@ the SQL that creates it is in
 | Store | Role | Status |
 |-------|------|--------|
 | PostgreSQL 16 | Main database and single source of truth for all application data | Implemented, no data yet (seed data is INIT_PLAN Commit 09) |
-| Neo4j 5 Community | Read-only graph copy used to improve ranking | Planned, owner: Levis |
+| Neo4j 5 Community | Harmonized graph projection used by the matching service | Planned, owner: Levis |
 
 ## 2. Architecture Decisions
 
@@ -49,10 +49,10 @@ the SQL that creates it is in
 |---|----------|--------|------------------------|
 | D1 | **PostgreSQL is the source of truth.** Every write from the app goes to PostgreSQL through the backend. | Transactions, foreign keys and constraints protect accounts, swipes and matches. One place to back up, seed and delete data. | Writing to both databases from the API (harder to keep consistent). |
 | D2 | **The backend owns the schema** through Prisma migrations. No other service creates or changes tables. | One migration history, no conflicting schema changes (INIT_PLAN, architecture doc 4.1.4). | Each service managing its own tables. |
-| D3 | **The matching service reads PostgreSQL through a read-only role.** | Least privilege: ranking cannot modify application data (architecture doc 4.2.5). The role is created with the matching service (INIT_PLAN Commit 08). | Full database access. |
+| D3 | **The matching pipeline reads canonical data from PostgreSQL and writes only the approved Neo4j projection.** | PostgreSQL remains the relational source of truth while the graph receives only normalized, minimized data. | Letting the matching service write application data directly. |
 | D4 | **snake_case table and column names** (`swipes.candidate_id`). | The matching service and the Neo4j sync use plain SQL; snake_case avoids quoted identifiers. Prisma maps them to camelCase in TypeScript. | Prisma's default PascalCase names. |
 | D5 | **Ranking signals are expressed through tags.** Cards and candidate backgrounds link to a fixed tag vocabulary. | REQ-ML-001 to 004 compare a candidate's background, likes and flags with cards; shared tags make that comparison simple and explainable. | Free-text matching. |
-| D6 | **Neo4j is added as a read-only copy, rebuilt from PostgreSQL.** The app never writes to Neo4j directly. | The team wants "candidates who liked the same jobs also liked these" recommendations, which are short path queries in a graph but many joins in SQL. A rebuildable copy keeps D1 and D2 intact. | PostgreSQL only; Apache AGE (graph queries inside PostgreSQL). |
+| D6 | **Neo4j is added as a minimized graph projection, rebuilt from PostgreSQL.** The app never writes to Neo4j directly. | The team wants "candidates who liked the same jobs also liked these" recommendations, which are short path queries in a graph but many joins in SQL. A rebuildable projection keeps D1 and D2 intact. | PostgreSQL only; Apache AGE (graph queries inside PostgreSQL). |
 | D7 | **The feed must work without Neo4j.** The graph only adds an extra score. | Keeps REQ-REL-002 (fallback feed) true and limits the risk of the new component. | Making Neo4j a required dependency. |
 | D8 | **No protected attributes are stored** in either database. | Ranking must not use gender, age, ethnicity, nationality, religion, disability, marital status or photos (REQ-COMP-004). If the data does not exist, it cannot be used. | Storing them and filtering in code. |
 
@@ -144,14 +144,15 @@ not need them.
   (REQ-COMP-001).
 - **Synthetic data only** in development, tests and the repository
   (REQ-ML-005). No real personal data is committed.
-- **Neo4j** stores IDs and tags only (section 7), and deleted accounts disappear
-  from it on the next sync.
+- **Neo4j** stores only the minimized identifiers, tags, status, publish date,
+  sector and permitted relationships described in section 7. Deleted accounts
+  disappear from it on the next sync.
 
 ## 7. Neo4j Graph Store (planned)
 
-Owner: Levis. Not implemented yet. Before implementation, the SRS (new
-REQ-ML-007, section 2.6), INIT_PLAN and the architecture document must be
-updated (see [section 9](#9-open-issues)).
+Owner: Levis. Not implemented yet. The graph is part of the matching
+architecture, while the synchronization implementation, algorithm selection
+and operational checks remain to be completed.
 
 ### 7.1 Why a graph
 
@@ -199,10 +200,12 @@ Each node label has a uniqueness constraint on `id`.
 
 ### 7.3 Synchronisation
 
-- A Python sync script (`psycopg` + the official `neo4j` driver) reads
-  PostgreSQL with the read-only role and writes Neo4j.
-- First version: **full rebuild** (clear the graph, then load nodes and
-  relationships in batches with `UNWIND`) at startup and every few minutes.
+- A harmonization pipeline jointly designed by Alba and Levis reads canonical
+  PostgreSQL data with the approved access boundary and writes Neo4j through
+  the official driver.
+- Proposed first version: **full rebuild** (clear the graph, then load nodes
+  and relationships in batches with `UNWIND`). The trigger and cadence remain
+  open and must be selected with the matching algorithm.
 - Because the graph is rebuilt, deleted accounts and cards disappear on the next
   run. The maximum delay must be documented with the script.
 - The sync never writes to PostgreSQL.
@@ -253,9 +256,9 @@ To change the schema:
 
 | # | Issue | Owner | Status |
 |---|-------|-------|--------|
-| 1 | Add REQ-ML-007 (graph-based ranking) to the SRS and change Neo4j from "Deferred" to Iteration 2 in SRS 2.6. | Levis | Open |
-| 2 | Update INIT_PLAN (it currently says no Neo4j is initialized) and add the graph-store commit. | Levis | Open |
-| 3 | Add Neo4j and the sync to the architecture document; mark its open decision 4 (database schema) as resolved. | Levis, Peter | Open |
-| 4 | Create the read-only PostgreSQL role for the matching service and the sync. | Nils | Open (INIT_PLAN Commit 08) |
-| 5 | Load synthetic seed data, including overlapping likes between candidates so the graph has patterns to find. | Qiu, Nils | Open (INIT_PLAN Commit 09) |
-| 6 | Confirm the data-protection scope (SRS Appendix B, issue 2), which affects retention and export. | Team | Open |
+| 1 | Update the backlog with the actual database and architecture work already completed. | Jean-Baptiste | Open |
+| 2 | Define the canonical PostgreSQL-to-Neo4j field mapping and deduplication rules. | Alba, Levis | Open |
+| 3 | Select and evaluate the matching algorithm on synthetic graph fixtures. | Nils | Open |
+| 4 | Implement the Neo4j pipeline, including freshness, retry, idempotency and deletion checks. | Alba, Levis | Open |
+| 5 | Load synthetic seed data with overlapping candidate likes so graph ranking has patterns to find. | Alba, Nils | Open |
+| 6 | Confirm the GDPR retention and deletion policy for both stores. | Team | Open |
