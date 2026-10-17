@@ -1,7 +1,9 @@
 # Backend API
 
 This directory will contain the Node.js and TypeScript REST/JSON backend API.
-It owns the PostgreSQL schema and database migrations.
+It owns the PostgreSQL schema and database migrations. It also exposes the
+integration boundary used to send approved application data and matching
+requests to the Python matching service.
 
 > **Status:** Only the database foundation exists (Prisma schema, first
 > migration and the PostgreSQL Compose service). API routes, authentication
@@ -63,13 +65,15 @@ Run from the repository root unless stated otherwise.
 
 - `prisma/schema.prisma` and `prisma/migrations/` are the only source of the
   database schema. Never change tables by hand or from another service.
-- Tables and columns use snake_case so the matching service can read them
-  with plain SQL through its read-only role (added with the matching service).
+- Tables and columns use snake_case so the data pipeline and matching service
+  can consume a stable relational representation.
 - Integrity rules that Prisma cannot express (salary range, swipe decisions,
   CV size, published date) are `CHECK` constraints at the end of the
   migration SQL.
 - No protected attributes (gender, age, nationality, photos, etc.) are stored,
   so they cannot become ranking inputs (REQ-COMP-004).
+- PostgreSQL remains the source of truth; Neo4j stores only the approved graph
+  projection produced by the harmonization pipeline.
 
 ## Data model
 

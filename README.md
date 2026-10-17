@@ -13,7 +13,7 @@ Repository: `bhsei/26A`
 The repository currently contains:
 
 - the Software Requirements Specification v0.1;
-- the approved initialization baseline and execution sequence;
+- the initialization baseline and the current architecture direction;
 - the required project directories and documentation placeholders;
 - the document-review Issue template;
 - repository rules for local secrets and generated files.
@@ -25,12 +25,12 @@ runtime services and mobile shell are not available yet.
 
 The following items are intentionally not implemented at this stage:
 
-- backend API, authentication and database migrations;
-- matching service and ranking strategy;
-- PostgreSQL Compose environment;
+- backend API, authentication and application routes;
+- selected matching algorithm and matching-service implementation;
+- Neo4j graph synchronization pipeline;
 - synthetic seed generator;
 - Expo mobile application;
-- OpenAPI contract and architecture design;
+- OpenAPI contract and final architecture alignment;
 - automated tests, coverage checks and GitHub Actions;
 - remote deployment.
 
@@ -66,13 +66,18 @@ dashboards and multi-language UI are not part of this initialization.
 |---|---|---|
 | Mobile app | React Native, Expo and TypeScript | Android-first candidate and recruiter UI |
 | Backend API | Node.js, Fastify, TypeScript and Prisma | REST/JSON API, authentication, authorization and schema migrations |
-| Database | PostgreSQL 16 | Persistent application data |
-| Matching service | Python, FastAPI, Pydantic and `psycopg` | Internal ranked-card HTTP endpoint |
+| Relational database | PostgreSQL 16 | Accounts, companies, cards and application source data |
+| Matching service | Python, FastAPI, Pydantic and the selected ranking libraries | Ranking algorithm and graph-data preparation |
+| Graph database | Neo4j Community | Candidate, company and job relationships used by matching |
 | Local orchestration | Docker Compose | Local database and service startup |
 
 The backend is the single owner of the PostgreSQL schema and migrations. The
-matching service will use a read-only database role. This prevents two
-migration tools from competing over the same database.
+backend writes application data to PostgreSQL and calls the matching service.
+The matching service transforms approved user interactions into graph data in
+Neo4j and serves the selected ranking algorithm. Alba and Levis define the
+pipeline's canonical mapping, harmonization and deduplication rules; the
+matching service executes that pipeline. Neo4j is not a second source of truth
+for account data.
 
 ## Prerequisites
 
@@ -83,6 +88,7 @@ The complete quick start will require:
 3. Node.js LTS and npm for backend and mobile development.
 4. Python 3.12 and `uv` for matching-service development.
 5. An Android 10+ emulator or device for the mobile POC.
+6. Neo4j Community for the local matching-service environment.
 
 The prerequisites are documented here ahead of the service scaffolds. The
 commands below become executable as the corresponding initialization commits
@@ -178,7 +184,9 @@ kept.
 
 The backend and matching service will propagate a request ID and log timestamp,
 endpoint, status and duration without passwords, tokens, message contents or
-CV files. API errors will use the shape
+CV files. The matching service will use PostgreSQL data received through the
+backend pipeline and maintain the graph representation required by the selected
+algorithm. API errors will use the shape
 `{ "code": "string", "message": "string" }`.
 
 ## Planned iterations
@@ -219,16 +227,16 @@ its implementation commit is complete.
 
 | Member | Initial responsibility |
 |---|---|
-| Qiu | PostgreSQL schema, Prisma migrations, seed data and fixtures |
-| Nils | Python matching service, project management and traceability |
-| Peter | Authentication, security, Android validation and CI |
-| Jean-Baptiste | Architecture, OpenAPI, backend API integration and data boundaries |
-| Lewis | Front-end/mobile work with Peter, manual testing and accessibility review |
+| Alba (Qiu) | PostgreSQL schema, Prisma migrations and relational data quality |
+| Nils | Matching research, algorithm implementation, evaluation and matching service |
+| Peter (Shek) | Mobile design, React Native/Expo frontend implementation and Android validation |
+| Jean-Baptiste | Backend API, PostgreSQL integration, matching-service integration and architecture |
+| Levis | Neo4j graph database and the harmonization pipeline with Alba |
 
-Lewis and Peter will agree their detailed front-end/mobile split before the
-mobile shell is implemented. The team recognizes that mobile UI design is a
-risk area and will use a small shared component/theme vocabulary plus early
-Android accessibility checks.
+The team recognizes that the mobile UI and cross-database pipeline are
+integration risks. Peter should validate the mobile design early, while Alba
+and Levis should agree the canonical field mapping, deduplication rules and
+pipeline consistency checks before Neo4j ranking is integrated.
 
 ## Documentation map
 
@@ -254,8 +262,9 @@ and all required documentation and traceability artifacts are present.
 ## Licence and open decisions
 
 MIT is the proposed open-source licence and will be added only after team
-approval. The remaining confirmations are the final GDPR scope and retention
-policy, the exact Lewis/Peter front-end split, and JWT/session semantics.
+approval. The remaining confirmations are the final GDPR retention policy,
+JWT/session semantics, the selected matching algorithm, and the exact
+PostgreSQL-to-Neo4j synchronization cadence and failure policy.
 
 See the [initialization plan](plans/INIT_PLAN.md) for the commit sequence,
 risks, ownership details and verification steps.

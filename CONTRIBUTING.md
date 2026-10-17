@@ -32,6 +32,8 @@ commit focused on one document or one coherent technical unit.
 - Do not add an out-of-scope web client, payments, video interviews, external
   job-board integration or analytics dashboard.
 - Keep the backend as the single owner of PostgreSQL schema migrations.
+- Keep PostgreSQL as the relational source of truth for application data;
+  changes to the Neo4j graph must go through the agreed harmonization pipeline.
 - Do not use protected attributes or photos as ranking inputs.
 
 ## Branch and commit workflow
@@ -137,4 +139,3 @@ Reviewers should:
 - [ ] `git diff --check` passes.
 - [ ] The PR description explains unfinished work or known limitations.
 - [ ] The change does not introduce a second database migration owner.
-

@@ -1,8 +1,10 @@
 # Matching service
 
 This directory will contain the Python internal HTTP service responsible for
-ranking candidate-card pairs through a replaceable ranking strategy.
+researching, evaluating and serving the selected ranking strategy. It will
+receive matching data through the backend integration and maintain the Neo4j
+graph projection used by the approved algorithm.
 
-> **Placeholder:** The matching service has not been implemented yet. Ranking
-> inputs must exclude the protected attributes listed in the SRS.
-
+> **Placeholder:** The matching service has not been implemented yet. Nils owns
+> the algorithm selection and service implementation. Ranking inputs must
+> exclude the protected attributes listed in the SRS.
