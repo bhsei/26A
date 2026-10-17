@@ -8,9 +8,10 @@
 **Institution:** Beihang University  
 **Documentation Method:** SEI Views and Beyond (V&B)  
 **Document Version:** 1.0 
-**Author/Responsible Contributor:** Peter Richard Shekidele
+**Authors/Responsible Contributors:** Peter (Shek, Peter Richard Shekidele);
+Jean-Baptiste Simon
 **Status:** Draft — For Team Review  
-**Architecture Documentation:** `docs/design/software-architecture.md`
+**Architecture Documentation:** `docs/design/Architecture_Design.md`
 
 ---
 
@@ -134,6 +135,8 @@ flowchart TD
     API[Node.js Fastify Backend API]
     DB[(PostgreSQL 16)]
     Matching[Python FastAPI Matching Service]
+    Graph[(Neo4j Graph Database)]
+    Pipeline[PostgreSQL to Neo4j Harmonization Pipeline]
     Repo[GitHub Repository]
     CI[Planned CI and Quality Checks]
 
@@ -142,13 +145,19 @@ flowchart TD
     Mobile <-->|HTTPS and REST/JSON| API
     API <-->|Prisma and database queries| DB
     API -->|Internal matching request| Matching
-    Matching -->|Read-only data access| DB
+    API -->|Application data| DB
+    Matching -->|Rank and update graph projection| Graph
+    Pipeline -->|Read relational data| DB
+    Pipeline -->|Deduplicate and write graph projection| Graph
+    Matching -->|Read graph relationships| Graph
     Repo --> CI
 ```
 
 **Figure 1. Proposed high-level system architecture.**
 
-The diagram represents the intended design. The exact interfaces, service startup sequence, security configuration, and automation remain subject to implementation and team review.
+The diagram represents the intended design. The exact interfaces, service startup sequence, security configuration, graph
+synchronization cadence and automation remain subject to implementation and
+team review.
 
 ---
 
@@ -197,7 +206,11 @@ The architecture follows the technology plan currently recorded in the repositor
 - **Local orchestration:** Docker Compose.
 - **Source control:** Git and GitHub.
 
-The backend is the designated owner of PostgreSQL schema changes and database migrations. The matching service is intended to use a read-only database role so that database schema management remains under a single owner.
+The backend is the designated owner of PostgreSQL schema changes and database
+migrations. PostgreSQL remains the relational source of truth. The matching
+service consumes the harmonized Neo4j projection, while the Alba/Levis
+pipeline is responsible for transforming approved relational data into that
+projection without changing the PostgreSQL schema.
 
 The proof of concept must remain manageable within the academic schedule and available team resources.
 
@@ -270,8 +283,9 @@ flowchart TD
 | Feed and Swipe Management | Handles candidate feeds, Like and Pass actions, and related state changes. |
 | Matching-Service Client | Requests ranking results from the matching service through an internal interface. |
 | Backend Database Access | Uses Prisma to manage application data in PostgreSQL. |
-| Matching Logic | Calculates and orders candidate-job relevance using the agreed ranking strategy. |
-| Matching Data Access | Reads the data required for ranking through a restricted database role. |
+| Matching Logic | Calculates and orders candidate-job relevance using the selected and evaluated ranking strategy. |
+| Graph Projection Pipeline | Harmonizes, deduplicates and projects approved PostgreSQL data into Neo4j. |
+| Graph Data Access | Reads the approved Neo4j projection without making Neo4j the account-data source of truth. |
 
 These are logical responsibilities. They do not require every responsibility to become a separate deployed service.
 
@@ -282,10 +296,11 @@ The proposed module structure follows these rules:
 1. The mobile application communicates with the backend through the defined API rather than accessing PostgreSQL directly.
 2. The backend validates incoming requests and checks authorization before performing protected operations.
 3. The backend owns database schema migrations.
-4. The matching service does not independently modify the database schema.
-5. The matching service uses a read-only database role for its planned database access.
-6. Matching logic should remain sufficiently separate from the mobile interface so that ranking behavior can be changed without redesigning the user interface.
-7. Modules should expose clear interfaces and avoid unnecessary dependencies on internal implementation details.
+4. The matching service does not independently modify the PostgreSQL schema.
+5. PostgreSQL is the source of truth for relational application data.
+6. The harmonization pipeline is the only path that writes the approved graph projection to Neo4j.
+7. Matching logic should remain sufficiently separate from the mobile interface so that ranking behavior can be changed without redesigning the user interface.
+8. Modules should expose clear interfaces and avoid unnecessary dependencies on internal implementation details.
 
 These rules reduce accidental coupling and make parallel development easier.
 
@@ -313,9 +328,26 @@ PostgreSQL stores persistent application data, including account records, candid
 
 **4. Python Matching Service**
 
-The matching service receives ranking requests and returns ordered results according to the agreed matching strategy. It is planned as an internal service rather than a public mobile-facing API.
+The matching service receives ranking requests and returns ordered results
+according to the selected matching strategy. It researches and evaluates
+candidate algorithms, executes the harmonization boundary that updates the
+Neo4j projection from approved data, reads that graph projection, and remains
+an internal service rather than a public mobile-facing API.
 
-**5. Local Development Environment**
+**5. Neo4j Graph Database**
+
+Neo4j stores the approved graph projection of jobs, companies, candidates and
+their permitted relationships. It is not the source of truth for accounts or
+other relational application data.
+
+**6. Data Harmonization Pipeline**
+
+The pipeline, designed by Alba and Levis and executed by the matching service,
+reads the canonical PostgreSQL representation, deduplicates and normalizes
+records, then writes the approved projection to Neo4j. Its cadence, freshness
+target and retry behavior must be defined before graph ranking is integrated.
+
+**7. Local Development Environment**
 
 Docker Compose is intended to coordinate the local development services and database. The exact service configuration will be documented when the implementation is available.
 
@@ -328,16 +360,20 @@ sequenceDiagram
     participant API as Backend API
     participant DB as PostgreSQL
     participant Match as Matching Service
+    participant Graph as Neo4j
+    participant Pipeline as Harmonization Pipeline
 
     Candidate->>App: Open job feed
     App->>API: Request feed using HTTPS
     API->>API: Validate request and authorization
     API->>Match: Request ranked cards
-    Match->>DB: Read ranking data
-    DB-->>Match: Return permitted data
+    Match->>Graph: Read graph relationships
+    Graph-->>Match: Return permitted relationships
     Match-->>API: Return ranked card results
     API->>DB: Retrieve required card details
     DB-->>API: Return card records
+    Pipeline->>DB: Read canonical data
+    Pipeline->>Graph: Write deduplicated projection
     API-->>App: Return feed response
     App-->>Candidate: Display job cards
 
@@ -360,7 +396,8 @@ The diagram illustrates the intended interaction flow. Exact API routes, request
 | Mobile App ↔ Backend | Authentication, profiles, feed requests, and swipe actions. | HTTPS with REST/JSON. |
 | Backend ↔ PostgreSQL | Persistent application data and transactional operations. | Prisma and PostgreSQL access. |
 | Backend ↔ Matching Service | Internal ranking requests and results. | Internal HTTP interface, to be finalized. |
-| Matching Service ↔ PostgreSQL | Read the information needed for ranking. | psycopg with a restricted read-only role. |
+| Harmonization Pipeline ↔ PostgreSQL | Read canonical application data for normalization and graph projection. | Approved PostgreSQL access boundary; no schema changes. |
+| Matching Service ↔ Neo4j | Read graph relationships needed for ranking. | Official Neo4j driver with minimized graph data. |
 | Developers ↔ Repository | Source control, reviews, and collaboration. | Git and GitHub. |
 
 ### 4.2.5 Runtime Security Boundaries
@@ -391,8 +428,10 @@ It connects the logical architecture to the devices, runtime environments, and d
 |---|---|---|
 | React Native Mobile Application | Android device or emulator, using Expo during development. | Planned |
 | Backend API | Node.js runtime in the local development environment. | Planned |
-| PostgreSQL Database | PostgreSQL 16 service managed through the local development setup. | Planned |
+| PostgreSQL Database | PostgreSQL 16 service managed through the local development setup. | Foundation present; application integration planned |
+| Neo4j Graph Database | Neo4j Community graph projection for matching relationships. | Planned |
 | Python Matching Service | Python runtime using FastAPI. | Planned |
+| PostgreSQL-to-Neo4j Harmonization Pipeline | Local pipeline for normalization, deduplication and graph projection. | Planned |
 | Docker Compose | Local orchestration of configured services. | Planned |
 | Git Repository | GitHub repository `bhsei/26A`. | Available |
 | Automated Build and Test Checks | GitHub Actions or the team-approved CI configuration. | Planned; verify repository configuration |
@@ -411,9 +450,13 @@ flowchart TB
         API[Node.js and Fastify Backend]
         Matching[Python and FastAPI Matching Service]
         DB[(PostgreSQL 16)]
+        Graph[(Neo4j Community)]
+        Pipeline[Harmonization Pipeline]
         API --> DB
         API --> Matching
-        Matching -->|Read-only access| DB
+        Matching -->|Read graph projection| Graph
+        Pipeline -->|Read canonical data| DB
+        Pipeline -->|Write normalized projection| Graph
     end
 
     App <-->|HTTPS / REST-JSON| API
@@ -451,7 +494,9 @@ The following table records the proposed architectural decisions and the reasons
 | PostgreSQL 16 for persistent storage | Provides relational data storage and transactional operations for accounts, profiles, jobs, and interactions. | Other database technologies. |
 | A separate Python matching service | Separates ranking logic from general application operations and allows the matching component to evolve independently. | Implementing all matching logic directly in the backend. |
 | Backend-owned database migrations | Maintains a single owner for schema changes and reduces migration conflicts. | Allowing multiple services to independently manage the schema. |
-| Read-only database access for the matching service | Reduces the risk of accidental modifications to application data. | Giving the matching service broader database permissions. |
+| PostgreSQL as relational source of truth | Keeps account and application writes transactional and auditable. | Treating the graph as a second system of record. |
+| Neo4j graph projection | Represents candidate, company and job relationships for the selected matching algorithm. | Keeping all relationship queries in relational joins. |
+| Alba/Levis harmonization pipeline | Deduplicates and normalizes data before it enters the graph. | Independently transforming data in multiple services. |
 | Docker Compose for local orchestration | Helps developers run the configured services in a consistent local environment. | Manual startup and configuration of each service. |
 | GitHub for collaboration | Provides version control, review workflows, and a shared project history. | Uncoordinated local development without a shared repository. |
 
@@ -522,13 +567,29 @@ The backend is expected to call the Python matching service through an internal 
 
 The exact payload, endpoint, error format, timeout behavior, and authentication between services remain to be defined.
 
-### 6.4 Matching-Service-to-Database Interface
+### 6.4 Matching-Service-to-Graph Interface
 
-The matching service uses psycopg for PostgreSQL access and is intended to have a read-only database role.
+The matching service reads the approved Neo4j graph projection using the official
+Neo4j driver. It must not treat Neo4j as the source of truth for account data.
+The graph contains only the fields and relationships approved by the data
+minimisation rules.
 
-It must not independently manage schema migrations. The exact data it may read should be limited to what is necessary for the matching function.
+### 6.5 PostgreSQL-to-Neo4j Harmonization Interface
 
-### 6.5 Interface Documentation Requirements
+The harmonization pipeline reads canonical PostgreSQL data, applies the agreed
+normalization and deduplication rules, and writes the graph projection to
+Neo4j. Alba owns the relational source and Levis owns the graph model; they
+jointly define the canonical mapping and consistency checks.
+
+The pipeline must define:
+
+- its trigger or schedule;
+- freshness and retry guarantees;
+- idempotency and deletion behavior;
+- the graph fields and relationships it may write;
+- a reconciliation check against PostgreSQL.
+
+### 6.6 Interface Documentation Requirements
 
 Before final integration, each interface should define:
 
@@ -637,7 +698,7 @@ Quality attribute scenarios describe how the system should behave under specifie
 | Architecture and implementation become inconsistent | Integration errors and inaccurate documentation. | Review the architecture after major design or implementation changes. |
 | Matching-service interface is not finalized | Backend and matching-service integration delays. | Agree on the interface contract before completing integration. |
 | Database migration ownership becomes unclear | Conflicting schema changes and failed development environments. | Keep PostgreSQL schema migrations under backend ownership. |
-| Matching service receives excessive database permissions | Accidental data modification or increased security risk. | Use a restricted read-only role and verify permissions. |
+| Harmonization pipeline receives excessive database permissions | Accidental relational data modification or increased security risk. | Grant only the approved PostgreSQL read boundary and verify it. |
 | Authentication and token behavior remain undecided | Inconsistent security behavior across clients and services. | Agree on the authentication and session design and document it. |
 | Local configuration differs between developers | Services fail to start or communicate correctly. | Document prerequisites, environment variables, and local setup steps. |
 | Scope expands beyond the proof of concept | Incomplete core features and missed academic deadlines. | Prioritize the agreed MVP and defer out-of-scope features. |
@@ -713,11 +774,11 @@ The repository currently records the following initial responsibilities.
 
 | Team Member | Initial Responsibility |
 |---|---|
-| Qiu Runxiao | PostgreSQL schema, Prisma migrations, seed data, and fixtures. |
-| Nils Förg | Python matching service, project management, and traceability. |
-| Peter Richard Shekidele | Authentication, security, Android validation, and CI. |
-| Jean-Baptiste Grégoire Simon | Architecture, OpenAPI, backend API integration, and data boundaries. |
-| Lewis Bangoh | Front-end/mobile work with Peter, manual testing, and accessibility review. |
+| Alba (Qiu Runxiao) | PostgreSQL schema, Prisma migrations and relational data quality. |
+| Nils Förg | Matching research, algorithm evaluation, Python matching service and traceability. |
+| Peter (Shek, Peter Richard Shekidele) | Mobile design, React Native/Expo implementation and Android validation. |
+| Jean-Baptiste Simon | Backend API, PostgreSQL integration, matching integration and architecture. |
+| Levis Bangoh | Neo4j graph database and the PostgreSQL-to-Neo4j harmonization pipeline with Alba. |
 
 Responsibilities may be refined by team agreement. Architecture decisions and implementation ownership should be coordinated to ensure that the document accurately reflects the work being delivered.
 
