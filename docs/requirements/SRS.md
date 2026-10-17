@@ -1,8 +1,8 @@
 # Software Requirements Specification
 ## For AdoptAJob
 
-Version 0.3  
-Prepared by Qiu Runxiao, Nils Förg, Peter Richard, Levis Bangoh, Jean-Baptiste Grégoire Simon  
+Version 0.4
+Prepared by Alba (Qiu Runxiao), Nils Förg, Peter (Shek, Peter Richard Shekidele), Levis Bangoh, Jean-Baptiste Simon  
 Software Engineering course, Team A (repository `bhsei/26A`)  
 2026-10-10
 
@@ -39,6 +39,7 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Team A | 2026-10-10 | Initial draft: Sections 1 to 5 | 0.1 |
 | Team A | 2026-10-16 | MoSCoW rebalance: REQ-FUNC-003, 004, 020 and REQ-INST-002 lowered to Should; notification split from REQ-FUNC-012 into new REQ-FUNC-024 (Should); REQ-COMP-002 raised to Should to match REQ-FUNC-004; REQ-ML-006 raised to Must; REQ-FUNC-007 reworded to "may" | 0.2 |
 | Team A | 2026-10-16 | Neo4j adopted as a read-only graph store for ranking: updated 2.1 and 2.6, added Neo4j to 1.3, added REQ-ML-007 (graph-based ranking, Should) and REQ-ML-008 (graph data minimisation, Must) | 0.3 |
+| Team A | 2026-10-17 | Confirmed candidate-only swiping, recruiter acceptance, PostgreSQL as relational source of truth, and Alba/Levis ownership of the PostgreSQL-to-Neo4j harmonization pipeline | 0.4 |
 |      |      |                    |         |
 
 ## 1. Introduction
@@ -68,7 +69,7 @@ This SRS defines what AdoptAJob shall do and the qualities it shall have. It is 
 | Match | The state reached when a candidate has liked a card and the card's recruiter has accepted that candidate. |
 | MoSCoW | Prioritisation scheme: Must, Should, Could, Won't (this release). |
 | MVP | Minimum Viable Product. |
-| Neo4j | Graph database used as a read-only copy of the main database to find candidates with similar likes (REQ-ML-007). |
+| Neo4j | Graph database used as a minimized, read-only application projection to find relationships relevant to matching (REQ-ML-007, REQ-ML-008). |
 | Pass | A left swipe: the candidate is not interested in the card. |
 | p95 | 95th percentile of a measured value. |
 | Recruiter | A user who represents a company and publishes cards. |
@@ -135,7 +136,7 @@ UI language is English. Basic accessibility (text contrast, readable font sizes,
 ### 2.5 Assumptions and Dependencies
 - **A1:** Users have an Android 10+ smartphone with internet access. Impact if false: the app may not run; iOS is best effort.
 - **A2:** Demo data (companies, cards, candidates) will be synthetic, so no real recruiter is required for v1.0.
-- **A3:** A match requires a candidate like and a recruiter accept. This interpretation must be confirmed by the team (see Appendix B).
+- **A3:** A match requires a candidate like and a recruiter accept. Candidates are the only users who swipe; recruiters review interested candidates and accept or decline them.
 - **A4:** Free hosting (or a team laptop with Docker) is available for demos. Impact if false: demo runs locally only.
 - **A5:** Open-source libraries (React Native, Expo, Node.js, Python, PostgreSQL) remain available under their current licences.
 
@@ -685,5 +686,6 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 
 | # | Issue | Owner | Status |
 |---|-------|-------|--------|
-| 1 | Confirm the match rule (candidate like + recruiter accept) vs. a recruiter-side swipe deck on candidates. | Team | Open |
-| 2 | Choose the data-protection jurisdiction for REQ-COMP-003 (PIPL, GDPR, or both). | Team | Open |
+| 1 | Confirm the GDPR retention and deletion policy for PostgreSQL and Neo4j. | Team | Open |
+| 2 | Select the matching algorithm and document its evaluation criteria. | Nils | Open |
+| 3 | Define the PostgreSQL-to-Neo4j harmonization cadence, freshness target, retry policy and reconciliation checks. | Alba, Levis | Open |
