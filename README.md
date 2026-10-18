@@ -107,7 +107,7 @@ cd 26A
 git status
 ```
 
-Read the [initialization plan](plans/INIT_PLAN.md) before adding service code.
+Read the [project backlog](plans/BACKLOG.md) before adding service code.
 
 ### Target local POC workflow
 
@@ -241,7 +241,8 @@ pipeline consistency checks before Neo4j ranking is integrated.
 ## Documentation map
 
 - [Software Requirements Specification](docs/requirements/SRS.md)
-- [Initialization plan](plans/INIT_PLAN.md)
+- [Project backlog](plans/BACKLOG.md)
+- [Project changelog](plans/CHANGELOG.md)
 - [Design documentation](docs/design/README.md)
 - [Testing documentation](docs/testing/README.md)
 - [Release documentation](docs/release/README.md)
@@ -266,5 +267,6 @@ approval. The remaining confirmations are the final GDPR retention policy,
 JWT/session semantics, the selected matching algorithm, and the exact
 PostgreSQL-to-Neo4j synchronization cadence and failure policy.
 
-See the [initialization plan](plans/INIT_PLAN.md) for the commit sequence,
-risks, ownership details and verification steps.
+See the [project backlog](plans/BACKLOG.md) and
+[project changelog](plans/CHANGELOG.md) for the current work sequence,
+risks, ownership details and repository history.

@@ -15,8 +15,8 @@ secrets or real personal data.
 
 3. Read the relevant requirements in
    [`docs/requirements/SRS.md`](docs/requirements/SRS.md).
-4. Check the ownership and sequence in
-   [`plans/INIT_PLAN.md`](plans/INIT_PLAN.md).
+4. Check ownership and dependencies in the
+   [`project backlog`](plans/BACKLOG.md).
 
 Do not begin a second unrelated change in the same working tree. Keep each
 commit focused on one document or one coherent technical unit.

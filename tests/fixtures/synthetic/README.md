@@ -14,7 +14,7 @@ for development and tests: 3 companies, 3 recruiters, 4 candidates, 17 tags,
 one application and one report. Its header lists the expected results, such as
 each candidate's feed and the graph recommendations (REQ-ML-007).
 
-It is not the demo seed (INIT_PLAN Commit 09). **It empties every application
+It is not the demo seed (see `plans/BACKLOG.md`). **It empties every application
 table first**, so load it only into your local database. From the repository
 root:
 

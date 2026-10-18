@@ -2,7 +2,7 @@
 ## For AdoptAJob
 
 Version 0.4
-Prepared by Alba (Qiu Runxiao), Nils Förg, Peter (Shek, Peter Richard Shekidele), Levis Bangoh, Jean-Baptiste Simon  
+Prepared by Alba (Qiu Runxiao), Nils Förg, Peter (Shek, Peter Richard Shekidele), Levis Bangoh, Jean-Baptiste SIMON
 Software Engineering course, Team A (repository `bhsei/26A`)  
 2026-10-10
 

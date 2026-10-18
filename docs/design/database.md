@@ -40,7 +40,7 @@ the SQL that creates it is in
 
 | Store | Role | Status |
 |-------|------|--------|
-| PostgreSQL 16 | Main database and single source of truth for all application data | Implemented, no data yet (seed data is INIT_PLAN Commit 09) |
+| PostgreSQL 16 | Main database and single source of truth for all application data | Implemented, no data yet (seed data is tracked in `plans/BACKLOG.md`) |
 | Neo4j 5 Community | Harmonized graph projection used by the matching service | Planned, owner: Levis |
 
 ## 2. Architecture Decisions
@@ -48,7 +48,7 @@ the SQL that creates it is in
 | # | Decision | Reason | Alternative considered |
 |---|----------|--------|------------------------|
 | D1 | **PostgreSQL is the source of truth.** Every write from the app goes to PostgreSQL through the backend. | Transactions, foreign keys and constraints protect accounts, swipes and matches. One place to back up, seed and delete data. | Writing to both databases from the API (harder to keep consistent). |
-| D2 | **The backend owns the schema** through Prisma migrations. No other service creates or changes tables. | One migration history, no conflicting schema changes (INIT_PLAN, architecture doc 4.1.4). | Each service managing its own tables. |
+| D2 | **The backend owns the schema** through Prisma migrations. No other service creates or changes tables. | One migration history, no conflicting schema changes (see the project backlog and architecture document). | Each service managing its own tables. |
 | D3 | **The matching pipeline reads canonical data from PostgreSQL and writes only the approved Neo4j projection.** | PostgreSQL remains the relational source of truth while the graph receives only normalized, minimized data. | Letting the matching service write application data directly. |
 | D4 | **snake_case table and column names** (`swipes.candidate_id`). | The matching service and the Neo4j sync use plain SQL; snake_case avoids quoted identifiers. Prisma maps them to camelCase in TypeScript. | Prisma's default PascalCase names. |
 | D5 | **Ranking signals are expressed through tags.** Cards and candidate backgrounds link to a fixed tag vocabulary. | REQ-ML-001 to 004 compare a candidate's background, likes and flags with cards; shared tags make that comparison simple and explainable. | Free-text matching. |

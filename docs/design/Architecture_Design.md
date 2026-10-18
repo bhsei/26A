@@ -9,7 +9,7 @@
 **Documentation Method:** SEI Views and Beyond (V&B)  
 **Document Version:** 1.0 
 **Authors/Responsible Contributors:** Peter (Shek, Peter Richard Shekidele);
-Jean-Baptiste Simon
+Jean-Baptiste SIMON
 **Status:** Draft — For Team Review  
 **Architecture Documentation:** `docs/design/Architecture_Design.md`
 
@@ -777,7 +777,7 @@ The repository currently records the following initial responsibilities.
 | Alba (Qiu Runxiao) | PostgreSQL schema, Prisma migrations and relational data quality. |
 | Nils Förg | Matching research, algorithm evaluation, Python matching service and traceability. |
 | Peter (Shek, Peter Richard Shekidele) | Mobile design, React Native/Expo implementation and Android validation. |
-| Jean-Baptiste Simon | Backend API, PostgreSQL integration, matching integration and architecture. |
+| Jean-Baptiste SIMON | Backend API, PostgreSQL integration, matching integration and architecture. |
 | Levis Bangoh | Neo4j graph database and the PostgreSQL-to-Neo4j harmonization pipeline with Alba. |
 
 Responsibilities may be refined by team agreement. Architecture decisions and implementation ownership should be coordinated to ensure that the document accurately reflects the work being delivered.
