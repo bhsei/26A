@@ -89,26 +89,26 @@ slice.
 |---|---|---|---|---|---|
 | PLAN-001 | Populate this changelog from verified Git history | Jean-Baptiste SIMON | Git history | `plans/CHANGELOG.md` | Done |
 | PLAN-002 | Maintain this backlog as the current work source | Jean-Baptiste SIMON | None | `plans/BACKLOG.md` | Done |
-| PLAN-003 | Define detailed project schedule and verb-based Mermaid Gantt | Jean-Baptiste | ARCH-001, API-001 | `plans/PROJECT_PLAN.md` | Planned |
-| ARCH-002 | Validate the architecture document with all owners | Jean-Baptiste | ARCH-001 | Review evidence | Planned |
+| PLAN-003 | Define detailed project schedule and verb-based Mermaid Gantt | Jean-Baptiste SIMON | ARCH-001, API-001 | `plans/PROJECT_PLAN.md` | Planned |
+| ARCH-002 | Validate the architecture document with all owners | Jean-Baptiste SIMON | ARCH-001 | Review evidence | Planned |
 | ARCH-003 | Define the canonical PostgreSQL-to-Neo4j data mapping | Alba, Levis | DB-002 | Mapping document or design section | Planned |
 | ARCH-004 | Define graph freshness, retry, deletion and reconciliation policy | Alba, Levis | ARCH-003 | Design decision | Planned |
-| API-001 | Create the OpenAPI 3 baseline | Jean-Baptiste | ARCH-001 | `docs/design/openapi.yaml` | Planned |
-| API-002 | Validate public/mobile and internal/matching contracts | Jean-Baptiste, Peter, Nils | API-001 | Validated OpenAPI and review evidence | Planned |
+| API-001 | Create the OpenAPI 3 baseline | Jean-Baptiste SIMON | ARCH-001 | `docs/design/openapi.yaml` | Done |
+| API-002 | Validate public/mobile and internal/matching contracts | Jean-Baptiste SIMON, Peter, Nils | API-001 | Validator output and review evidence | In progress |
 
 ## Backend work
 
 | ID | Task | Responsible | Dependency | Deliverable | Status |
 |---|---|---|---|---|---|
-| BACKEND-001 | Scaffold the Fastify TypeScript application | Jean-Baptiste | API-001, DB-002 | `src/backend/src/` and scripts | Planned |
-| BACKEND-002 | Implement `GET /health` and readiness checks | Jean-Baptiste | BACKEND-001 | Backend health routes and tests | Planned |
-| BACKEND-003 | Implement request ID generation and propagation | Jean-Baptiste | BACKEND-001 | Request-ID hook and tests | Planned |
-| BACKEND-004 | Implement the `{code,message}` error contract | Jean-Baptiste | BACKEND-001, API-001 | Error handler and contract tests | Planned |
-| BACKEND-005 | Implement authentication and authorization boundaries | Jean-Baptiste | BACKEND-002, DB-002 | Auth routes, JWT/session boundary and tests | Planned |
-| BACKEND-006 | Implement recruiter company and card routes | Jean-Baptiste | BACKEND-005, API-002 | Protected card endpoints and tests | Planned |
-| BACKEND-007 | Implement candidate feed and idempotent swipes | Jean-Baptiste | BACKEND-005, MATCH-002 | Feed/swipe routes and persistence tests | Planned |
-| BACKEND-008 | Integrate the backend with the matching service | Jean-Baptiste | BACKEND-007, MATCH-001, API-002 | Internal client, timeout and fallback tests | Planned |
-| BACKEND-009 | Add backend lint, formatting, coverage and component README | Jean-Baptiste | BACKEND-001 | Backend quality checks | Planned |
+| BACKEND-001 | Scaffold the Fastify TypeScript application | Jean-Baptiste SIMON | API-001, DB-002 | `src/backend/src/` and scripts | In progress |
+| BACKEND-002 | Implement `GET /health` and readiness checks | Jean-Baptiste SIMON | BACKEND-001 | Backend health routes and tests | Planned |
+| BACKEND-003 | Implement request ID generation and propagation | Jean-Baptiste SIMON | BACKEND-001 | Request-ID hook and tests | Planned |
+| BACKEND-004 | Implement the `{code,message}` error contract | Jean-Baptiste SIMON | BACKEND-001, API-001 | Error handler and contract tests | Planned |
+| BACKEND-005 | Implement authentication and authorization boundaries | Jean-Baptiste SIMON | BACKEND-002, DB-002 | Auth routes, JWT/session boundary and tests | Planned |
+| BACKEND-006 | Implement recruiter company and card routes | Jean-Baptiste SIMON | BACKEND-005, API-002 | Protected card endpoints and tests | Planned |
+| BACKEND-007 | Implement candidate feed and idempotent swipes | Jean-Baptiste SIMON | BACKEND-005, MATCH-002 | Feed/swipe routes and persistence tests | Planned |
+| BACKEND-008 | Integrate the backend with the matching service | Jean-Baptiste SIMON | BACKEND-007, MATCH-001, API-002 | Internal client, timeout and fallback tests | Planned |
+| BACKEND-009 | Add backend lint, formatting, coverage and component README | Jean-Baptiste SIMON | BACKEND-001 | Backend quality checks | Planned |
 
 ## Matching, graph and data pipeline
 
@@ -138,10 +138,10 @@ slice.
 | ID | Task | Responsible | Dependency | Deliverable | Status |
 |---|---|---|---|---|---|
 | SEED-001 | Generate synthetic companies, cards, candidates and graph patterns | Alba, Nils | DB-003, GRAPH-002 | Reproducible seed | Planned |
-| TEST-001 | Create SRS traceability and test-case skeleton | Jean-Baptiste, Nils | API-001 | `docs/testing/`, `tests/traceability.csv` | Planned |
-| TEST-002 | Add backend unit and integration tests with 60% coverage | Jean-Baptiste | BACKEND-001 | Backend test report | Planned |
+| TEST-001 | Create SRS traceability and test-case skeleton | Jean-Baptiste SIMON, Nils | API-001 | `docs/testing/`, `tests/traceability.csv` | Planned |
+| TEST-002 | Add backend unit and integration tests with 60% coverage | Jean-Baptiste SIMON | BACKEND-001 | Backend test report | Planned |
 | TEST-003 | Add matching and graph tests with 60% coverage | Nils, Levis | MATCH-003, GRAPH-002 | Matching test report | Planned |
-| CI-001 | Add GitHub Actions for locked installs, lint and tests | Jean-Baptiste, Nils, Peter | TEST-002, TEST-003 | `.github/workflows/ci.yml` | Planned |
+| CI-001 | Add GitHub Actions for locked installs, lint and tests | Jean-Baptiste SIMON, Nils, Peter | TEST-002, TEST-003 | `.github/workflows/ci.yml` | Planned |
 | RECORD-001 | Record actual individual hours and work evidence | All members | None | `worklogs/individual/` | In progress |
 | RECORD-002 | Record meetings and approved meeting photographs | All members | Team consent | `assets/meetings/`, worklog entries | Planned |
 

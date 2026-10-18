@@ -114,6 +114,61 @@ The planning-record replacement and reference updates are committed as
 changes. Future changes to these documents should be committed separately
 from application code.
 
+## Current implementation batch
+
+The following work is prepared locally after `d941876` and is not committed
+yet:
+
+### API contract baseline
+
+- **Responsible contributor:** Jean-Baptiste SIMON
+- **Tasks:** API-001 completed; API-002 pending external review and validator
+  execution
+- **Evidence:** `docs/design/openapi.yaml`
+- **Change:** Defined the public REST contract for health, readiness,
+  authentication, candidate profile/feed/swipes, recruiter cards and the
+  internal matching rank endpoint. Standardized bearer authentication,
+  request-ID and idempotency headers, error bodies, ranking scores and the
+  one-second fallback boundary.
+
+### Backend scaffold
+
+- **Responsible contributor:** Jean-Baptiste SIMON
+- **Task:** BACKEND-001 in progress
+- **Evidence:** `src/backend/src/`, `src/backend/tests/app.test.ts`,
+  `src/backend/tsconfig.json`, `src/backend/package.json`
+- **Change:** Added the Fastify app factory, environment configuration,
+  request-ID propagation, redacted logging, health/readiness routes and
+  explicit `501 Not Implemented` boundaries for authentication and feed
+  operations. Added initial tests without claiming business functionality.
+- **Validation status:** `git diff --check` passes. Node.js/npm are unavailable
+  in the current shell, so dependencies, `package-lock.json`, TypeScript,
+  tests and OpenAPI validator output remain to be run.
+
+### Worklog
+
+- **Responsible contributor:** Jean-Baptiste SIMON
+- **Evidence:** `worklogs/individual/jean-baptiste-simon.md`
+- **Change:** Recorded the implementation evidence, a clearly labelled
+  two-hour preparation estimate and the unverified-duration limitation.
+
+### Proposed commits for this batch
+
+Keep the implementation separate from planning records:
+
+```text
+W<N> - API contract; define public and internal OpenAPI boundaries
+W<N> - Backend scaffold; add Fastify foundations and explicit route boundaries
+W<N> - Project tracking; record API and backend progress and validation blockers
+```
+
+The first commit contains `docs/design/openapi.yaml`. The second contains
+`src/backend/package.json`, `src/backend/package-lock.json` after dependency
+installation, `src/backend/tsconfig.json`, `src/backend/src/` and
+`src/backend/tests/`. The third contains `plans/BACKLOG.md`,
+`plans/CHANGELOG.md`, `src/backend/README.md` and
+`worklogs/individual/jean-baptiste-simon.md`.
+
 ## Next milestones
 
 - Select and evaluate the matching algorithm on synthetic fixtures.

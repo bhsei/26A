@@ -5,10 +5,10 @@ It owns the PostgreSQL schema and database migrations. It also exposes the
 integration boundary used to send approved application data and matching
 requests to the Python matching service.
 
-> **Status:** Only the database foundation exists (Prisma schema, first
-> migration and the PostgreSQL Compose service). API routes, authentication
-> and tests are added by later initialization commits. Do not add credentials,
-> tokens or real personal data.
+> **Status:** The Fastify application foundation and OpenAPI baseline now
+> exist. Health and readiness are available, while authentication, feed
+> persistence and matching integration remain explicit `501 Not Implemented`
+> boundaries. Do not add credentials, tokens or real personal data.
 
 ## Prerequisites
 
@@ -50,6 +50,15 @@ Run from the repository root unless stated otherwise.
    npm run db:generate
    ```
 
+4. Start the backend in development mode:
+
+   ```bash
+   npm run dev
+   ```
+
+   The API listens on `http://localhost:3000` by default. Check `GET /health`
+   and `GET /ready` before using application routes.
+
 ## Database commands
 
 | Command | Purpose |
@@ -60,6 +69,10 @@ Run from the repository root unless stated otherwise.
 | `npm run db:reset` | **Destructive:** drop the local database and reapply all migrations. |
 | `npm run db:generate` | Regenerate the Prisma client in `node_modules/.generated/prisma` (not committed). |
 | `npm run db:validate` | Validate `prisma/schema.prisma`. |
+| `npm run dev` | Start the Fastify server with file watching. |
+| `npm run build` | Compile TypeScript to `dist/`. |
+| `npm run typecheck` | Run the TypeScript compiler without emitting files. |
+| `npm test` | Run backend tests. |
 
 ## Schema ownership
 
