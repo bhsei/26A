@@ -26,6 +26,47 @@ Git.
 - **Planned:** dependency is known and work has not started.
 - **Blocked:** work cannot proceed until the stated dependency is resolved.
 
+## W5 Jean-Baptiste setup focus
+
+The project is still before application implementation. This week's setup
+should prepare the backend boundary without pretending that business routes
+already work:
+
+1. Create `docs/design/openapi.yaml` for health, authentication, cards, feed,
+   swipe and the internal matching endpoint.
+2. Scaffold the Fastify TypeScript application in `src/backend/src/` with
+   configuration loading, request IDs, structured redacted logging and the
+   `{code,message}` error shape.
+3. Add the backend package scripts and locked dependencies for linting,
+   formatting, tests and coverage.
+4. Run the backend against the existing PostgreSQL Compose service and keep
+   Prisma as the only PostgreSQL migration owner.
+5. Record the exact commands, decisions and hours in
+   `worklogs/individual/`.
+
+The first useful implementation slice is `API-001`, followed by
+`BACKEND-001` through the health, request-ID and error-contract foundations.
+Do not implement matching logic, Neo4j writes or mobile screens in this
+slice.
+
+## Initialization plan status
+
+| Original commit | Current status | Current evidence or next action |
+|---|---|---|
+| 01 - Repository skeleton | Done | Repository structure, ignore rules and placeholders are committed. |
+| 02 - Root README | Done | `README.md` is committed and points to the current project records. |
+| 03 - Contribution workflow | Done | `CONTRIBUTING.md` and the pull-request template are committed. |
+| 04 - Project plan and Gantt | Not started | Create `plans/PROJECT_PLAN.md`; keep M1-M3 dates and mark M4-M7 TBD. |
+| 05 - Architecture and OpenAPI skeleton | Partial | Architecture is documented; `docs/design/openapi.yaml` is still missing. |
+| 06 - Database schema, migration and Compose | Done for the current baseline | PostgreSQL, Prisma schema, migration and local Compose setup are present. |
+| 07 - Backend scaffold | Not started | Start after `API-001`; no Fastify application source or backend tests exist yet. |
+| 08 - Matching-service scaffold | Not started | Nils owns this after the internal contract is agreed. |
+| 09 - Synthetic seed generator | Partial | Deterministic mock SQL exists; the required 10/50/10 Prisma seed generator is still planned. |
+| 10 - Mobile Expo shell | Not started | Peter owns the mobile prototype and Expo setup. |
+| 11 - GitHub Actions CI | Not started | Add after component tests and locked commands exist. |
+| 12 - Testing and traceability skeleton | Not started | Add requirement/test mapping before broad implementation. |
+| 13 - Worklogs and weekly report | Partial | Placeholder READMEs exist; actual hours and evidence still need recording. |
+
 ## Completed work
 
 | ID | Task | Responsible | Status | Evidence |
@@ -33,20 +74,21 @@ Git.
 | REPO-001 | Establish repository structure and ignore rules | Jean-Baptiste | Done | `.gitignore`, `.env.example`, repository folders |
 | REPO-002 | Document project scope and local workflow | Jean-Baptiste | Done | `README.md` |
 | REPO-003 | Document contribution and review workflow | Jean-Baptiste | Done | `CONTRIBUTING.md`, `.github/` |
-| DB-001 | Start PostgreSQL locally with Docker Compose | Alba | Done | `docker-compose.yml` |
-| DB-002 | Define the Prisma relational schema | Alba | Done | `src/backend/prisma/schema.prisma` |
-| DB-003 | Add the initial PostgreSQL migration | Alba | Done | `src/backend/prisma/migrations/` |
-| DB-004 | Document the relational model and constraints | Alba | Done | `docs/design/database.md` |
-| DB-005 | Produce the database UML source and image | Alba | Done | `docs/design/database-uml.mmd`, `.png` |
-| ARCH-001 | Align architecture with PostgreSQL and Neo4j responsibilities | Jean-Baptiste | Done | `docs/design/Architecture_Design.md` |
-| REQ-001 | Record candidate-only swiping and recruiter acceptance | Jean-Baptiste | Done | `docs/requirements/SRS.md` |
+| DB-001 | Start PostgreSQL locally with Docker Compose | Alba (Qiu Runxiao) | Done | `docker-compose.yml` |
+| DB-002 | Define the Prisma relational schema | Alba (Qiu Runxiao) | Done | `src/backend/prisma/schema.prisma` |
+| DB-003 | Add the initial PostgreSQL migration | Alba (Qiu Runxiao) | Done | `src/backend/prisma/migrations/` |
+| DB-004 | Document the relational model and constraints | Alba (Qiu Runxiao) | Done | `docs/design/database.md` |
+| DB-005 | Produce the database UML source and image | Alba (Qiu Runxiao) | Done | `docs/design/database-uml.mmd`, `.png` |
+| DB-006 | Add deterministic synthetic mock fixtures | Alba (Qiu Runxiao) | Done | `tests/fixtures/synthetic/mock-data.sql` |
+| ARCH-001 | Align architecture with PostgreSQL and Neo4j responsibilities | Jean-Baptiste SIMON | Done | `docs/design/Architecture_Design.md` |
+| REQ-001 | Record candidate-only swiping and recruiter acceptance | Jean-Baptiste SIMON | Done | `docs/requirements/SRS.md` |
 
 ## Planning and architecture
 
 | ID | Task | Responsible | Dependency | Deliverable | Status |
 |---|---|---|---|---|---|
-| PLAN-001 | Populate this changelog from verified Git history | Jean-Baptiste | Git history | `plans/CHANGELOG.md` | In progress |
-| PLAN-002 | Maintain this backlog as the current work source | Jean-Baptiste | None | `plans/BACKLOG.md` | In progress |
+| PLAN-001 | Populate this changelog from verified Git history | Jean-Baptiste SIMON | Git history | `plans/CHANGELOG.md` | Done |
+| PLAN-002 | Maintain this backlog as the current work source | Jean-Baptiste SIMON | None | `plans/BACKLOG.md` | Done |
 | PLAN-003 | Define detailed project schedule and verb-based Mermaid Gantt | Jean-Baptiste | ARCH-001, API-001 | `plans/PROJECT_PLAN.md` | Planned |
 | ARCH-002 | Validate the architecture document with all owners | Jean-Baptiste | ARCH-001 | Review evidence | Planned |
 | ARCH-003 | Define the canonical PostgreSQL-to-Neo4j data mapping | Alba, Levis | DB-002 | Mapping document or design section | Planned |

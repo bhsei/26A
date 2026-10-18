@@ -72,12 +72,14 @@ backend integration, architecture alignment and the planning documents
   matching graph projection, candidate-only swiping, recruiter acceptance, and
   the Alba/Levis harmonization responsibility.
 
-## Commit references for `dev`
+## Commit references for `main` and `dev`
 
-This section tracks the `dev` branch, not `main`. The `dev` branch currently
-points to `abc3608` and contains the architecture, database and SRS alignment
-commits listed below. The author and committer are kept separate because some
-commits were authored by a teammate and committed by Jean-Baptiste.
+`main` currently points to `22eebb4`. `dev` currently points to `d941876` and
+contains the database, architecture, SRS and planning work listed below in
+addition to the history inherited from `main`. Agent-host session commits are
+omitted because they do not represent project deliverables. The author and
+committer are kept separate because some commits were authored by a teammate
+and committed by Jean-Baptiste.
 
 | Milestone | Commit | Author | Committed by |
 |---|---|---|---|
@@ -98,61 +100,19 @@ commits were authored by a teammate and committed by Jean-Baptiste.
 | Architecture alignment | [`1f1e6e3`](https://github.com/bhsei/26A/commit/1f1e6e3f5a2c0997494d3a3d0e4cf2b9fa0eb979) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
 | Database architecture | [`7ef695d`](https://github.com/bhsei/26A/commit/7ef695d34955163a15ee8f4fb5c023c08ec8b6ac) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
 | SRS v0.4 | [`abc3608`](https://github.com/bhsei/26A/commit/abc3608dd0dd08b2b71732dabc67b35624064b15) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
+| Planning records | [`bde8dac`](https://github.com/bhsei/26A/commit/bde8dac) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
+| Documentation references | [`d941876`](https://github.com/bhsei/26A/commit/d941876) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
 
-The current changelog and backlog edits are not included in this branch
-history until they are committed. The database documentation reference to
-`61ba7d3` is not present in the visible `dev` history and must not be treated
-as an authoritative commit reference without local verification.
+The database documentation reference to `61ba7d3` is not present in the
+visible `dev` history and must not be treated as an authoritative commit
+reference without local verification.
 
-## Current uncommitted work and commit split
+## Working-tree status
 
-The four documentation commits previously proposed are already present on
-`dev` as `b23e55f`, `1f1e6e3`, `7ef695d` and `abc3608`. They must not be
-recreated. The local working-tree status supplied by the contributor contains
-only these changes:
-
-- modified: `README.md`, `CONTRIBUTING.md`,
-  `docs/design/database.md`, `tests/fixtures/synthetic/README.md`;
-- deleted: `plans/INIT_PLAN.md`;
-- untracked: `plans/BACKLOG.md`, `plans/CHANGELOG.md`.
-
-Split this work into two commits:
-
-### Commit A - Replace the initialization plan
-
-Files:
-
-- `plans/INIT_PLAN.md` (delete);
-- `plans/BACKLOG.md` (add);
-- `plans/CHANGELOG.md` (add).
-
-Purpose: replace the historical initialization plan with the operational
-backlog and the verified `dev` branch history. This is one coherent planning
-records change.
-
-### Commit B - Update references to the new planning records
-
-Files:
-
-- `README.md`;
-- `CONTRIBUTING.md`;
-- `docs/design/database.md`;
-- `tests/fixtures/synthetic/README.md`.
-
-Purpose: update links and references from `INIT_PLAN.md` to `BACKLOG.md` and
-`CHANGELOG.md`. No architecture, SRS or database-model redesign belongs in
-this commit; those changes are already committed on `dev`.
-
-Suggested commit messages are:
-
-```text
-W<N> - Planning records; replace the initialization plan with verified history and backlog
-W<N> - Documentation references; point project guides to the backlog and changelog
-```
-
-The second commit depends on the first because its links target the new
-planning files. Before staging, run `git status --short`, `git diff --name-status`
-and `git diff --check` locally.
+The planning-record replacement and reference updates are committed as
+`bde8dac` and `d941876`. At the last verification, `dev` had no uncommitted
+changes. Future changes to these documents should be committed separately
+from application code.
 
 ## Next milestones
 
