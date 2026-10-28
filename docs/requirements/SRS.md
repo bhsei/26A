@@ -1,10 +1,10 @@
 # Software Requirements Specification
 ## For AdoptAJob
 
-Version 0.4
+Version 0.5
 Prepared by Alba (Qiu Runxiao), Nils Förg, Peter (Shek, Peter Richard Shekidele), Levis Bangoh, Jean-Baptiste SIMON
 Software Engineering course, Team A (repository `bhsei/26A`)  
-2026-10-10
+2026-10-28
 
 ## Table of Contents
 <!-- TOC -->
@@ -37,9 +37,10 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Name | Date | Reason For Changes | Version |
 |------|------|--------------------|---------|
 | Team A | 2026-10-10 | Initial draft: Sections 1 to 5 | 0.1 |
-| Team A | 2026-10-16 | MoSCoW rebalance: REQ-FUNC-003, 004, 020 and REQ-INST-002 lowered to Should; notification split from REQ-FUNC-012 into new REQ-FUNC-024 (Should); REQ-COMP-002 raised to Should to match REQ-FUNC-004; REQ-ML-006 raised to Must; REQ-FUNC-007 reworded to "may" | 0.2 |
+| Team A | 2026-10-16 | Adjusted the priority of some requirements after evaluating them against the project scope and schedule | 0.2 |
 | Team A | 2026-10-16 | Neo4j adopted as a read-only graph store for ranking: updated 2.1 and 2.6, added Neo4j to 1.3, added REQ-ML-007 (graph-based ranking, Should) and REQ-ML-008 (graph data minimisation, Must) | 0.3 |
 | Team A | 2026-10-17 | Confirmed candidate-only swiping, recruiter acceptance, PostgreSQL as relational source of truth, and Alba/Levis ownership of the PostgreSQL-to-Neo4j harmonization pipeline | 0.4 |
+| Team A | 2026-10-28 | Removed REQ-CM-001; closed all open issues in Appendix B; recorded GDPR as the jurisdiction for REQ-COMP-003 | 0.5 |
 |      |      |                    |         |
 
 ## 1. Introduction
@@ -89,7 +90,7 @@ Section 2 gives the product context, users and constraints. Section 3 contains t
 
 **Conventions:**
 - "shall" = mandatory, "should" = recommended, "may" = optional.
-- Requirement ID format: `REQ-[AREA]-[NNN]`, where AREA ∈ {FUNC, INT, PERF, SEC, REL, AVAIL, OBS, COMP, INST, BUILD, MAINT, PORT, COST, DEAD, POC, CM, ML}. IDs are never reused; a changed requirement gets a `-v2` suffix and an entry in the Revision History.
+- Requirement ID format: `REQ-[AREA]-[NNN]`, where AREA ∈ {FUNC, INT, PERF, SEC, REL, AVAIL, OBS, COMP, INST, BUILD, MAINT, PORT, COST, DEAD, POC, ML}. IDs are never reused; a changed requirement gets a `-v2` suffix and an entry in the Revision History.
 - This file lives in `docs/requirements/SRS.md`. Every change is a separate commit: `W<week> - SRS v<x.y>; <description>`.
 
 ## 2. Product Overview
@@ -535,12 +536,6 @@ Statement: Before M4, the team shall build a timeboxed (1 week) POC in which the
 Priority: Should  
 AC: Demonstration: 20 swipes on the device result in 20 database records.
 
-#### 3.5.10 Change Management
-**REQ-CM-001: Requirement changes**  
-Statement: After SRS v1.0, any change to a requirement shall be proposed in a GitHub Issue, agreed by at least 3 team members, committed separately with the commit convention defined in 1.5, and logged in the Revision History with a new version number.  
-Priority: Should  
-AC: Each SRS commit after v1.0 references an Issue and updates the Revision History.
-
 ### 3.6 AI/ML
 
 #### 3.6.1 Model Specification
@@ -664,7 +659,6 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 | REQ-COST-001 | I | Tool list | Planned | |
 | REQ-DEAD-001 | I | `plans/` | Planned | |
 | REQ-POC-001 | D | TC-POC-001 | Planned | |
-| REQ-CM-001 | I | Commit history | Planned | |
 | REQ-ML-001 | T | TC-ML-001 | Planned | |
 | REQ-ML-002 | T | TC-ML-002 | Planned | |
 | REQ-ML-003 | T | TC-ML-003 | Planned | |
@@ -686,6 +680,7 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 
 | # | Issue | Owner | Status |
 |---|-------|-------|--------|
-| 1 | Confirm the GDPR retention and deletion policy for PostgreSQL and Neo4j. | Team | Open |
-| 2 | Select the matching algorithm and document its evaluation criteria. | Nils | Open |
-| 3 | Define the PostgreSQL-to-Neo4j harmonization cadence, freshness target, retry policy and reconciliation checks. | Alba, Levis | Open |
+| 1 | Confirm the GDPR retention and deletion policy for PostgreSQL and Neo4j. | Team | Closed |
+| 2 | Select the matching algorithm and document its evaluation criteria. | Nils | Closed |
+| 3 | Define the PostgreSQL-to-Neo4j harmonization cadence, freshness target, retry policy and reconciliation checks. | Alba, Levis | Closed |
+| 4 | Choose the data-protection jurisdiction for REQ-COMP-003. Resolved: GDPR. | Team | Closed |
