@@ -2,7 +2,7 @@
 ## For AdoptAJob
 
 Version 0.5
-Prepared by Alba (Qiu Runxiao), Nils Förg, Peter (Shek, Peter Richard Shekidele), Levis Bangoh, Jean-Baptiste SIMON
+Prepared by Runxiao Qiu, Nils Förg, Peter (Shek, Peter Richard Shekidele), Levis Bangoh, Jean-Baptiste SIMON
 Software Engineering course, Team A (repository `bhsei/26A`)  
 2026-10-28
 
@@ -39,8 +39,8 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Team A | 2026-10-10 | Initial draft: Sections 1 to 5 | 0.1 |
 | Team A | 2026-10-16 | Adjusted the priority of some requirements after evaluating them against the project scope and schedule | 0.2 |
 | Team A | 2026-10-16 | Neo4j adopted as a read-only graph store for ranking: updated 2.1 and 2.6, added Neo4j to 1.3, added REQ-ML-007 (graph-based ranking, Should) and REQ-ML-008 (graph data minimisation, Must) | 0.3 |
-| Team A | 2026-10-17 | Confirmed candidate-only swiping, recruiter acceptance, PostgreSQL as relational source of truth, and Alba/Levis ownership of the PostgreSQL-to-Neo4j harmonization pipeline | 0.4 |
-| Team A | 2026-10-28 | Removed REQ-CM-001; closed all open issues in Appendix B; recorded GDPR as the jurisdiction for REQ-COMP-003 | 0.5 |
+| Team A | 2026-10-17 | Confirmed candidate-only swiping, recruiter acceptance, PostgreSQL as relational source of truth, and Runxiao Qiu/Levis ownership of the PostgreSQL-to-Neo4j harmonization pipeline | 0.4 |
+| Team A | 2026-10-28 | Closed all open issues in Appendix B; recorded GDPR as the jurisdiction for REQ-COMP-003 | 0.5 |
 |      |      |                    |         |
 
 ## 1. Introduction
@@ -682,5 +682,5 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 |---|-------|-------|--------|
 | 1 | Confirm the GDPR retention and deletion policy for PostgreSQL and Neo4j. | Team | Closed |
 | 2 | Select the matching algorithm and document its evaluation criteria. | Nils | Closed |
-| 3 | Define the PostgreSQL-to-Neo4j harmonization cadence, freshness target, retry policy and reconciliation checks. | Alba, Levis | Closed |
+| 3 | Define the PostgreSQL-to-Neo4j harmonization cadence, freshness target, retry policy and reconciliation checks. | Runxiao Qiu, Levis | Closed |
 | 4 | Choose the data-protection jurisdiction for REQ-COMP-003. Resolved: GDPR. | Team | Closed |
