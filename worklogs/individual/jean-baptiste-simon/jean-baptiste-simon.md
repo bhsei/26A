@@ -24,3 +24,33 @@
   be regenerated before BACKEND-001 is marked Done.
 - **Next action:** Complete API-002 validation with Peter and Nils, regenerate
   `package-lock.json`, then resolve any TypeScript or test failures.
+
+## 2026-10-28
+
+### Backend dependency setup
+
+- **Task:** BACKEND-001
+- **Commit:** `f6d19ea`
+- **Work:** Installed the backend dependencies and committed the generated
+  lockfile.
+- **Evidence:** `src/backend/package-lock.json`
+- **Validation:** `npm install` completed successfully; `npm run typecheck`,
+  `npm test` and `npm run build` completed successfully. The test suite
+  reported three passing tests.
+- **Environment note:** The repository requests Node.js 22, while this setup
+  used Node.js 24.20.0 and npm 11.19.0. The engine warning must be resolved
+  or explicitly accepted before release.
+- **Security note:** npm reported five audit findings (two moderate, one high
+  and two critical). They require review before using `npm audit fix --force`.
+
+## 2026-11-01
+
+### Team B SRS peer review
+
+- **Task:** RECORD-001
+- **Commit:** `ed246b4`
+- **Work:** Reviewed Team B's SRS v0.5 and recorded 15 findings: one severe,
+  nine moderate and five minor.
+- **Evidence:** `worklogs/individual/jean-baptiste-simon/Team_B_SRS_Review_Report.md`
+- **Review issue:** `https://github.com/bhsei/26B/issues/2`
+- **Result:** Revision recommended before Team B freezes its SRS v1.0 baseline.
