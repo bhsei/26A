@@ -26,7 +26,7 @@ Git.
 - **Planned:** dependency is known and work has not started.
 - **Blocked:** work cannot proceed until the stated dependency is resolved.
 
-## W5 Jean-Baptiste setup focus
+## W6 Jean-Baptiste setup focus
 
 The project is still before application implementation. This week's setup
 should prepare the backend boundary without pretending that business routes
@@ -57,15 +57,15 @@ slice.
 | 02 - Root README | Done | `README.md` is committed and points to the current project records. |
 | 03 - Contribution workflow | Done | `CONTRIBUTING.md` and the pull-request template are committed. |
 | 04 - Project plan and Gantt | Not started | Create `plans/PROJECT_PLAN.md`; keep M1-M3 dates and mark M4-M7 TBD. |
-| 05 - Architecture and OpenAPI skeleton | Partial | Architecture is documented; `docs/design/openapi.yaml` is still missing. |
+| 05 - Architecture and OpenAPI skeleton | Partial | Architecture and `docs/design/openapi.yaml` exist; Redocly still requires operation summaries. |
 | 06 - Database schema, migration and Compose | Done for the current baseline | PostgreSQL, Prisma schema, migration and local Compose setup are present. |
-| 07 - Backend scaffold | Not started | Start after `API-001`; no Fastify application source or backend tests exist yet. |
+| 07 - Backend scaffold | Done for the foundation | Fastify source, tests, lockfile, typecheck and build are present; business routes remain unfinished. |
 | 08 - Matching-service scaffold | Not started | Nils owns this after the internal contract is agreed. |
 | 09 - Synthetic seed generator | Partial | Deterministic mock SQL exists; the required 10/50/10 Prisma seed generator is still planned. |
 | 10 - Mobile Expo shell | Not started | Peter owns the mobile prototype and Expo setup. |
 | 11 - GitHub Actions CI | Not started | Add after component tests and locked commands exist. |
 | 12 - Testing and traceability skeleton | Not started | Add requirement/test mapping before broad implementation. |
-| 13 - Worklogs and weekly report | Partial | Placeholder READMEs exist; actual hours and evidence still need recording. |
+| 13 - Worklogs and weekly report | In progress | Individual worklog and Team B review evidence are now committed; weekly reporting remains. |
 
 ## Completed work
 
@@ -100,10 +100,10 @@ slice.
 
 | ID | Task | Responsible | Dependency | Deliverable | Status |
 |---|---|---|---|---|---|
-| BACKEND-001 | Scaffold the Fastify TypeScript application | Jean-Baptiste SIMON | API-001, DB-002 | `src/backend/src/` and scripts | In progress |
-| BACKEND-002 | Implement `GET /health` and readiness checks | Jean-Baptiste SIMON | BACKEND-001 | Backend health routes and tests | Planned |
-| BACKEND-003 | Implement request ID generation and propagation | Jean-Baptiste SIMON | BACKEND-001 | Request-ID hook and tests | Planned |
-| BACKEND-004 | Implement the `{code,message}` error contract | Jean-Baptiste SIMON | BACKEND-001, API-001 | Error handler and contract tests | Planned |
+| BACKEND-001 | Scaffold the Fastify TypeScript application | Jean-Baptiste SIMON | API-001, DB-002 | `src/backend/src/` and scripts | Done |
+| BACKEND-002 | Implement `GET /health` and readiness checks | Jean-Baptiste SIMON | BACKEND-001 | Backend health routes and tests | Done |
+| BACKEND-003 | Implement request ID generation and propagation | Jean-Baptiste SIMON | BACKEND-001 | Request-ID hook and tests | Done |
+| BACKEND-004 | Implement the `{code,message}` error contract | Jean-Baptiste SIMON | BACKEND-001, API-001 | Error handler and contract tests | Done |
 | BACKEND-005 | Implement authentication and authorization boundaries | Jean-Baptiste SIMON | BACKEND-002, DB-002 | Auth routes, JWT/session boundary and tests | Planned |
 | BACKEND-006 | Implement recruiter company and card routes | Jean-Baptiste SIMON | BACKEND-005, API-002 | Protected card endpoints and tests | Planned |
 | BACKEND-007 | Implement candidate feed and idempotent swipes | Jean-Baptiste SIMON | BACKEND-005, MATCH-002 | Feed/swipe routes and persistence tests | Planned |

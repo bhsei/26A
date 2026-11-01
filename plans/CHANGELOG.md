@@ -74,7 +74,8 @@ backend integration, architecture alignment and the planning documents
 
 ## Commit references for `main` and `dev`
 
-`main` currently points to `22eebb4`. `dev` currently points to `d941876` and
+`main` and `dev` currently point to `ed246b4` and are aligned. The branches
+contain the history below.
 contains the database, architecture, SRS and planning work listed below in
 addition to the history inherited from `main`. Agent-host session commits are
 omitted because they do not represent project deliverables. The author and
@@ -102,9 +103,14 @@ and committed by Jean-Baptiste.
 | SRS v0.4 | [`abc3608`](https://github.com/bhsei/26A/commit/abc3608dd0dd08b2b71732dabc67b35624064b15) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
 | Planning records | [`bde8dac`](https://github.com/bhsei/26A/commit/bde8dac) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
 | Documentation references | [`d941876`](https://github.com/bhsei/26A/commit/d941876) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
+| API contract | [`2aa078c`](https://github.com/bhsei/26A/commit/2aa078c) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
+| Backend scaffold | [`e3d7fd3`](https://github.com/bhsei/26A/commit/e3d7fd3) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
+| Project tracking | [`6132f1e`](https://github.com/bhsei/26A/commit/6132f1e) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
+| Backend dependencies | [`f6d19ea`](https://github.com/bhsei/26A/commit/f6d19ea) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
+| Team B SRS peer review | [`ed246b4`](https://github.com/bhsei/26A/commit/ed246b4) | Jean-Baptiste SIMON | Jean-Baptiste SIMON |
 
 The database documentation reference to `61ba7d3` is not present in the
-visible `dev` history and must not be treated as an authoritative commit
+visible project history and must not be treated as an authoritative commit
 reference without local verification.
 
 ## Working-tree status
@@ -114,16 +120,20 @@ The planning-record replacement and reference updates are committed as
 changes. Future changes to these documents should be committed separately
 from application code.
 
-## Current implementation batch
+At the last inspection, the working tree was clean before this tracking
+update. The current update is intentionally limited to project records and
+the individual worklog.
 
-The following work is prepared locally after `d941876` and is not committed
-yet:
+## Implemented backend batch
+
+The following work is committed in `2aa078c`, `e3d7fd3`, `6132f1e` and
+`f6d19ea`:
 
 ### API contract baseline
 
 - **Responsible contributor:** Jean-Baptiste SIMON
-- **Tasks:** API-001 completed; API-002 pending external review and validator
-  execution
+- **Tasks:** API-001 completed; API-002 remains pending final validator output
+  and external review
 - **Evidence:** `docs/design/openapi.yaml`
 - **Change:** Defined the public REST contract for health, readiness,
   authentication, candidate profile/feed/swipes, recruiter cards and the
@@ -141,16 +151,17 @@ yet:
   request-ID propagation, redacted logging, health/readiness routes and
   explicit `501 Not Implemented` boundaries for authentication and feed
   operations. Added initial tests without claiming business functionality.
-- **Validation status:** `git diff --check` passes. Node.js/npm are unavailable
-  in the current shell, so dependencies, `package-lock.json`, TypeScript,
-  tests and OpenAPI validator output remain to be run.
+- **Validation status:** `npm run typecheck`, `npm test` and `npm run build`
+  passed after dependency installation. Redocly still reports missing
+  operation summaries in the OpenAPI document.
 
 ### Worklog
 
 - **Responsible contributor:** Jean-Baptiste SIMON
 - **Evidence:** `worklogs/individual/jean-baptiste-simon.md`
-- **Change:** Recorded the implementation evidence, a clearly labelled
-  two-hour preparation estimate and the unverified-duration limitation.
+- **Change:** Recorded the implementation evidence, the dependency setup and
+  the later Team B SRS review. Preparation estimates remain labelled as
+  estimates rather than measured hours.
 
 ### Proposed commits for this batch
 
@@ -162,12 +173,9 @@ W<N> - Backend scaffold; add Fastify foundations and explicit route boundaries
 W<N> - Project tracking; record API and backend progress and validation blockers
 ```
 
-The first commit contains `docs/design/openapi.yaml`. The second contains
-`src/backend/package.json`, `src/backend/package-lock.json` after dependency
-installation, `src/backend/tsconfig.json`, `src/backend/src/` and
-`src/backend/tests/`. The third contains `plans/BACKLOG.md`,
-`plans/CHANGELOG.md`, `src/backend/README.md` and
-`worklogs/individual/jean-baptiste-simon.md`.
+Those three implementation commits are already present in the history. The
+remaining implementation action is to add OpenAPI operation summaries, rerun
+Redocly, and then record the final API-002 status separately.
 
 ## Next milestones
 
