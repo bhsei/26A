@@ -80,6 +80,6 @@
 - **Work:** Reviewed Team C's SRS v1.1 and recorded 15 findings: one severe,
   eight moderate and six minor.
 - **Evidence:** `worklogs/individual/runxiao-qiu/Team_C_SRS_Review_Report.md`
-- **Review issue:** `https://github.com/bhsei/26C/issues/<number>`
+- **Review issue:** `https://github.com/bhsei/26C/issues/10`
 - **Result:** Revision recommended before Team C uses its SRS as the baseline
   for the next development phase.

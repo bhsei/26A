@@ -6,7 +6,7 @@
 **Version reviewed:** v1.1 (Markdown edition, 28 October 2026), repository `bhsei/26C`  
 **Review date:** 2026-11-02  
 **Prepared by:** Runxiao Qiu (Team A)  
-**Review issue:** https://github.com/bhsei/26C/issues/<number>
+**Review issue:** https://github.com/bhsei/26C/issues/10
 
 ## Review scope
 
