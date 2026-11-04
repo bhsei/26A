@@ -43,7 +43,7 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Team A | 2026-10-28 | Removed REQ-CM-001 (requirement change process; ID retired); closed all open issues in Appendix B; recorded GDPR as the jurisdiction for REQ-COMP-003 | 0.5 |
 | Team A | 2026-10-28 | SRS corrections after review of the product: REQ-COMP-003 set to GDPR; REQ-FUNC-004 and REQ-COMP-002 raised to Must; recorded the decisions behind the closed Appendix B issues in REQ-ML-001, REQ-ML-008 and REQ-COMP-001; added minimum age to REQ-FUNC-001; listed password reset, email verification, undo swipe, liked-cards view, moderation tools and blocking as out of scope; clarified REQ-INT-001, 003, 004, REQ-FUNC-001, 003, 004, 009, 011, 014, 017, 019, REQ-PERF-001, REQ-SEC-002, 006, REQ-AVAIL-001, REQ-BUILD-002, REQ-COMP-005, REQ-MAINT-001, REQ-INST-002, REQ-ML-002, 003, 004, 007, 008; aligned shall/should with priorities; updated milestones, apportioning, glossary, references and verification status | 0.6 |
 | Team A | 2026-10-29 | Restructured all requirements to the R1 requirement template: added ID, Title, Rationale, Verification Method and More Information fields; renamed AC to Acceptance Criteria; moved constraint and cross-references from Priority to More Information; updated 1.5 and the introduction of Section 3 | 0.7 |
-| Team A | 2026-11-04 | Corrections from the Group F (bhsei/26A#1) and Team E (bhsei/26A#2) peer reviews of v0.7: REQ-SEC-004 raised to Must (F-07); REQ-COMP-001 privacy notice extended with controller, recipients, profiling and rights procedure (F-05); measurable acceptance criteria for REQ-MAINT-002 (F-08, A-11), REQ-OBS-003, REQ-REL-002 (slow-service case), REQ-FUNC-015, REQ-COMP-005, REQ-PORT-001 and REQ-AVAIL-001 (F-08); corrected REQ-ML-004 exclusion criterion (A-01); added aggregate-limit test to REQ-SEC-006 (A-08); added proxy review to REQ-COMP-004 and scope limits to 3.6.4, REQ-ML-001 and REQ-ML-007 (A-06, A-07); versioned references R5, R6 and R8 (A-10) | 0.8 |
+| Team A | 2026-11-04 | Corrections from the Group F (bhsei/26A#1) and Team E (bhsei/26A#2) peer reviews of v0.7: REQ-SEC-004 raised to Must (F-07); REQ-COMP-001 privacy notice extended with controller, recipients, profiling and rights procedure (F-05); measurable acceptance criteria for REQ-MAINT-002 (F-08, A-11), REQ-OBS-003, REQ-REL-002 (slow-service case), REQ-FUNC-015, REQ-COMP-005, REQ-PORT-001 and REQ-AVAIL-001 (F-08); corrected REQ-ML-004 exclusion criterion (A-01); added aggregate-limit test to REQ-SEC-006 (A-08); added proxy review to REQ-COMP-004 and scope limits to 3.6.4, REQ-ML-001 and REQ-ML-007 (A-06, A-07); versioned references R5, R6 and R8 (A-10); team decisions: only Job Cards create matches, a like on a Company Card is a ranking signal only, each accepting recruiter gets a separate match and chat, and applications are for the match's Job Card (F-04; glossary, REQ-FUNC-012, 016, 017, 019, 021, 024, REQ-SEC-003, REQ-COMP-001); REQ-FUNC-003 split into company creation and membership (raised to Must) and REQ-FUNC-025 invitation code (Should) (F-03); opened Appendix B issues 5 to 13 for the review findings still to be decided | 0.8 |
 
 ## 1. Introduction
 
@@ -65,7 +65,7 @@ v1.0 is an academic product demonstrated with synthetic data (A2). The complianc
 |------|------------|
 | Administrator | A team member who operates the demo system through the database and scripts (no admin UI in v1.0). |
 | API | Application Programming Interface. |
-| Application | A message plus optional CV that a candidate sends to a recruiter after a match. |
+| Application | A message plus optional CV that a candidate sends, for the Job Card of a match, to the recruiter of that match. |
 | Background | The optional information a candidate states about themselves: desired roles, skills, education level, years of experience, preferred locations, contract type. |
 | Candidate | A user looking for a job. |
 | Card | A recruiter-created visual unit that candidates swipe on. It is either a Company Card or a Job Card. |
@@ -75,12 +75,12 @@ v1.0 is an academic product demonstrated with synthetic data (A2). The complianc
 | GDPR | General Data Protection Regulation, Regulation (EU) 2016/679. |
 | Green flag | A candidate signal meaning "show me more cards like this", without expressing interest in this specific card. |
 | HTTPS | HTTP over TLS. |
-| Interested candidate | A candidate who liked a card and has not yet been accepted or declined for it. |
+| Interested candidate | A candidate who liked a Job Card and has not yet been accepted or declined for it. |
 | Job Card | A card presenting one open role. |
 | JSON | JavaScript Object Notation, the data format of the API. |
 | JWT | JSON Web Token, used to authenticate API requests. |
 | Like | A right swipe: the candidate is interested in the card. |
-| Match | The state reached when a candidate has liked a card and the card's recruiter has accepted that candidate. |
+| Match | The state reached when a candidate has liked a Job Card and a recruiter of the card's company has accepted that candidate. A match links the candidate, that recruiter and that Job Card. Company Cards never create matches. |
 | MoSCoW | Prioritisation scheme: Must, Should, Could, Won't (this release). |
 | MVP | Minimum Viable Product. |
 | Neo4j | Graph database used as a minimized, read-only application projection to find relationships relevant to matching (REQ-ML-007, REQ-ML-008). |
@@ -173,7 +173,7 @@ UI language is English. Basic accessibility (text contrast, readable font sizes,
 
 | Requirement(s) | Subsystem | Release |
 |----------------|-----------|---------|
-| REQ-FUNC-001 to 006, 008, 009, 011 to 015; REQ-INT-001 to 003, 005, 007; REQ-SEC-*; REQ-REL-001, 002; REQ-OBS-003; REQ-COMP-001, 004; REQ-INST-*; REQ-BUILD-*; REQ-POC-001 | Backend API, mobile app | Iteration 1 (MVP) |
+| REQ-FUNC-001 to 006, 008, 009, 011 to 015, 025; REQ-INT-001 to 003, 005, 007; REQ-SEC-*; REQ-REL-001, 002; REQ-OBS-003; REQ-COMP-001, 004; REQ-INST-*; REQ-BUILD-*; REQ-POC-001 | Backend API, mobile app | Iteration 1 (MVP) |
 | REQ-FUNC-016 to 020; REQ-INT-006; REQ-ML-001 to 006; REQ-PERF-*; REQ-OBS-001, 002; REQ-COMP-002, 003 | Backend API, matching service, mobile app | Iteration 2 |
 | REQ-ML-007, 008 (Neo4j graph store and harmonization pipeline) | Matching service, graph store | Iteration 2 |
 | REQ-FUNC-007, 010, 021 to 024; REQ-INT-004; REQ-AVAIL-001; REQ-PORT-001 (iOS) | Backend API, mobile app | Iteration 3 |
@@ -198,7 +198,7 @@ Each requirement uses the requirement template of R1, with the fields **ID**, **
 - Priority: Must
 - Acceptance Criteria: Each listed screen is reachable in at most 3 taps from the home screen of the corresponding role. The home screen is the swipe feed for candidates and the card list for recruiters.
 - Verification Method: Demonstration. Artifact: TC-INT-001 (Section 4).
-- More Information: The screens cover REQ-FUNC-001 to REQ-FUNC-024. Main user flows in Appendix A.
+- More Information: The screens cover REQ-FUNC-001 to REQ-FUNC-025. Main user flows in Appendix A.
 
 **REQ-INT-002: Swipe gesture alternatives**
 
@@ -308,12 +308,23 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-FUNC-003
 - Title: Recruiter company
-- Statement: On first sign-in, a recruiter should either create a company by entering at least the company name and sector, or join an existing company with an invitation code generated by a recruiter who already belongs to it.
-- Rationale: Cards and interested candidates belong to a company, not to a single recruiter, so several recruiters of one company must share them; the invitation code stops strangers from joining a company.
-- Priority: Should
-- Acceptance Criteria: A recruiter cannot publish a card before belonging to a company; joining a company without a valid, unused invitation code is rejected.
+- Statement: On first sign-in, a recruiter who does not belong to a company shall create one by entering at least the company name and sector, and shall become a member of it. A recruiter shall belong to exactly one company.
+- Rationale: Cards and interested candidates belong to a company, not to a single recruiter, so a recruiter must belong to a company before creating or publishing cards (REQ-FUNC-008, REQ-FUNC-009).
+- Priority: Must
+- Acceptance Criteria: A recruiter cannot create or publish a card before belonging to a company; creating a company without a name or sector is rejected and names the missing field; after creating a company, the recruiter is its member and can publish its cards.
 - Verification Method: Test. Artifact: TC-FUNC-003 (Section 4).
-- More Information: Related: REQ-FUNC-008, REQ-FUNC-009, REQ-FUNC-016, REQ-SEC-003.
+- More Information: Joining an existing company: REQ-FUNC-025. Related: REQ-FUNC-008, REQ-FUNC-009, REQ-FUNC-016, REQ-SEC-003.
+
+**REQ-FUNC-025: Company invitation code**
+
+- ID: REQ-FUNC-025
+- Title: Company invitation code
+- Statement: A recruiter who belongs to a company should be able to generate a single-use invitation code, and a recruiter who does not yet belong to a company should be able to join that company with the code instead of creating one (REQ-FUNC-003).
+- Rationale: Several recruiters of one company must share its cards and interested candidates; the invitation code stops strangers from joining a company.
+- Priority: Should
+- Acceptance Criteria: A recruiter who enters a valid, unused code becomes a member of the company and can manage its cards; joining with an invalid or already-used code is rejected.
+- Verification Method: Test. Artifact: TC-FUNC-025 (Section 4).
+- More Information: Split from REQ-FUNC-003 in v0.8. Related: REQ-FUNC-003, REQ-SEC-003.
 
 **REQ-FUNC-004: Account deletion**
 
@@ -421,10 +432,10 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-FUNC-012
 - Title: Like
-- Statement: A right swipe (or Like button) shall record the candidate's interest in the card.
+- Statement: A right swipe (or Like button) shall record the candidate's interest in the card. A like on a Job Card adds the candidate to the card's interested-candidates list; a like on a Company Card is a ranking signal only (REQ-ML-001) and does not add the candidate to any interested list.
 - Rationale: The like is how a candidate expresses interest and is the input recruiters review; without it no match can happen (A3).
 - Priority: Must
-- Acceptance Criteria: The candidate appears in the recruiter's interested-candidates list for that card within 5 seconds.
+- Acceptance Criteria: After a like on a Job Card, the candidate appears in the interested-candidates list for that card within 5 seconds; after a like on a Company Card, the candidate appears in no interested-candidates list.
 - Verification Method: Test. Artifact: TC-FUNC-012 (Section 4).
 - More Information: Assumption A3. Related: REQ-FUNC-016, REQ-FUNC-024, REQ-ML-001, REQ-REL-001.
 
@@ -465,7 +476,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-FUNC-024
 - Title: Like notification
-- Statement: The system should notify the card's recruiter inside the app when a candidate likes one of their cards (REQ-FUNC-012).
+- Statement: The system should notify the recruiters of the card's company inside the app when a candidate likes one of the company's Job Cards (REQ-FUNC-012).
 - Rationale: Recruiters need to know when there is new interest to review; otherwise candidates wait and matches are delayed.
 - Priority: Should
 - Acceptance Criteria: The next time the recruiter opens the app (or within 10 seconds if open), a new-interest indicator is shown on the card.
@@ -478,21 +489,24 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-FUNC-016
 - Title: Interested candidates
-- Statement: The system shall show the recruiters of a company, for each of the company's cards, the list of candidates who liked it, with each candidate's background summary.
+- Statement: The system shall show the recruiters of a company, for each of the company's Job Cards, the list of candidates who liked it, with each candidate's background summary.
 - Rationale: The recruiter makes the match decision (A3, REQ-ML-006) and needs the list of interested candidates with enough background to judge them.
 - Priority: Must
 - Acceptance Criteria: The list contains exactly the candidates who liked the card and have not been accepted or declined yet.
 - Verification Method: Test. Artifact: TC-FUNC-016 (Section 4).
-- More Information: Visibility rule: REQ-SEC-003. Decision: REQ-FUNC-017.
+- More Information: Visibility rule: REQ-SEC-003. Decision: REQ-FUNC-017. Fields shown and end of access: Appendix B, issue 5.
 
 **REQ-FUNC-017: Accept or decline**
 
 - ID: REQ-FUNC-017
 - Title: Accept or decline
-- Statement: The system shall let the recruiter accept or decline each interested candidate. Accepting shall create a match. A like on a Company Card creates a match with the company; a like on a Job Card creates a match for that role.
+- Statement: The system shall let a recruiter of the company accept or decline each interested candidate of a Job Card. Accepting shall create a match between the candidate and the accepting recruiter for that Job Card. If several recruiters of the company accept the same candidate for the same Job Card, each acceptance shall create a separate match, and the candidate chats with each of them (REQ-FUNC-020). Company Cards never create matches (REQ-FUNC-012).
 - Rationale: A match needs consent from both sides (A3); recruiter acceptance stops every candidate who liked a card from contacting the recruiter.
 - Priority: Must
-- Acceptance Criteria: After accept, the match appears in both users' match lists; after decline, the candidate is not notified and is removed from the list.
+- Acceptance Criteria:
+  - After accept, the match appears in the match lists of the candidate and of the accepting recruiter; after decline, the candidate is not notified and is removed from the list.
+  - When two recruiters of the same company accept the same candidate for the same Job Card, the candidate's match list shows two matches, one with each recruiter, each with its own chat.
+  - No match can be created from a like on a Company Card.
 - Verification Method: Test. Artifact: TC-FUNC-017 (Section 4).
 - More Information: Assumption A3. Related: REQ-ML-006, REQ-FUNC-018, REQ-FUNC-019.
 
@@ -514,7 +528,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 - Statement: The system shall show each user the list of their matches, most recent first.
 - Rationale: Matches are the entry point to chat and applications; most recent first lets users continue current conversations.
 - Priority: Must
-- Acceptance Criteria: Each entry shows the other party's name, the card title (the company name for a Company Card) and the last message, if any.
+- Acceptance Criteria: Each entry shows the other party's name, the Job Card title and the last message, if any.
 - Verification Method: Test. Artifact: TC-FUNC-019 (Section 4).
 - More Information: Related: REQ-FUNC-020, REQ-FUNC-021. Entry states "Account deleted" (REQ-FUNC-004) and "Position closed" (REQ-FUNC-009).
 
@@ -533,7 +547,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-FUNC-021
 - Title: Apply
-- Statement: The system should let a matched candidate send an application consisting of a short message and an optional PDF CV of at most 5 MB.
+- Statement: The system should let a matched candidate send, within a match, an application for the match's Job Card, consisting of a short message and an optional PDF CV of at most 5 MB. The application is sent to the recruiter of that match.
 - Rationale: Applying turns a match into a hiring process; format and size limits keep CVs readable and storage bounded.
 - Priority: Should
 - Acceptance Criteria: The recruiter can open the application and download the CV; files that are not PDF or are larger than 5 MB are rejected.
@@ -631,12 +645,12 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-SEC-003
 - Title: Authorization
-- Statement: A user shall only read or change their own data. Recruiters shall only manage cards of their company. Candidate data shall only be visible to the recruiters of a company after that candidate liked one of the company's cards.
+- Statement: A user shall only read or change their own data. Recruiters shall only manage cards of their company. Candidate data shall only be visible to the recruiters of a company after that candidate liked one of the company's Job Cards.
 - Rationale: Candidate profiles, matches and messages are personal data (C3); showing them to other users or other companies would breach privacy and trust.
 - Priority: Must
 - Acceptance Criteria: Automated tests attempting to access another user's profile, cards, matches or chats return 403 or 404.
 - Verification Method: Test. Artifact: TC-SEC-003 (Section 4).
-- More Information: Constraint C3. Related: REQ-FUNC-003, REQ-FUNC-016.
+- More Information: Constraint C3. Related: REQ-FUNC-003, REQ-FUNC-016, REQ-FUNC-025.
 
 **REQ-SEC-004: Transport security**
 
@@ -765,7 +779,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-COMP-001
 - Title: Privacy notice and consent
-- Statement: At registration, the app shall display a privacy notice stating: the identity and contact details of the data controller; which personal data is collected, why, on which legal basis, and how long it is kept; the recipients of the data (recruiters of the companies whose cards the candidate liked, REQ-SEC-003); that cards are ranked automatically from the candidate's background and swipes (REQ-ML-001, REQ-ML-007) while match decisions are always made by a recruiter (REQ-ML-006); and how users exercise their rights (in-app export and deletion, REQ-COMP-002, REQ-FUNC-004, and the controller contact for other requests). The app shall require the user to accept it before the account is created. Personal data shall be kept only for these periods: account data until the account is deleted or has been inactive for 12 months, after which it is deleted as in REQ-FUNC-004; CVs until the match ends or the account is deleted; reports for 12 months after creation.
+- Statement: At registration, the app shall display a privacy notice stating: the identity and contact details of the data controller; which personal data is collected, why, on which legal basis, and how long it is kept; the recipients of the data (recruiters of the companies whose Job Cards the candidate liked, REQ-SEC-003); that cards are ranked automatically from the candidate's background and swipes (REQ-ML-001, REQ-ML-007) while match decisions are always made by a recruiter (REQ-ML-006); and how users exercise their rights (in-app export and deletion, REQ-COMP-002, REQ-FUNC-004, and the controller contact for other requests). The app shall require the user to accept it before the account is created. Personal data shall be kept only for these periods: account data until the account is deleted or has been inactive for 12 months, after which it is deleted as in REQ-FUNC-004; CVs until the match ends or the account is deleted; reports for 12 months after creation.
 - Rationale: The GDPR (Articles 13 and 21 to 22) requires telling users who is responsible for their data, what is processed, why, on which legal basis, for how long, who receives it, whether profiling is used and how to exercise their rights, and keeping data no longer than needed (C3).
 - Priority: Must
 - Acceptance Criteria: Registration cannot be completed without ticking the acceptance checkbox; inspection of the notice finds each item listed in the statement, including the retention periods; the notice is reachable from the profile screen; a cleanup run on synthetic data with shifted timestamps deletes the inactive accounts, the CVs of ended matches and the old reports, and nothing else.
@@ -1108,6 +1122,7 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 | REQ-FUNC-022 | T | TC-FUNC-022 | Planned | |
 | REQ-FUNC-023 | T | TC-FUNC-023 | Planned | |
 | REQ-FUNC-024 | T | TC-FUNC-024 | Planned | |
+| REQ-FUNC-025 | T | TC-FUNC-025 | Planned | |
 | REQ-PERF-001 | T (load) | TC-PERF-001 | Planned | |
 | REQ-PERF-002 | T (load) | TC-PERF-002 | Planned | |
 | REQ-PERF-003 | T (manual) | TC-PERF-003 | Planned | |
@@ -1165,3 +1180,12 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 | 2 | Select the matching algorithm and document its evaluation criteria. | Nils | Closed | Weighted tag-overlap score plus graph co-like score (R6 section 7.4); evaluated by REQ-ML-001 to 004 and 007. |
 | 3 | Define the PostgreSQL-to-Neo4j harmonization cadence, freshness target, retry policy and reconciliation checks. | Runxiao Qiu, Levis | Closed | REQ-ML-008: full rebuild every 15 min, 3 retries, count reconciliation. |
 | 4 | Choose the data-protection jurisdiction for REQ-COMP-003. | Team | Closed | GDPR (REQ-COMP-003). |
+| 5 | Define the candidate background fields shown to recruiters in the interested-candidates list, and when a recruiter's access to a candidate's data ends (after a decline, an unmatch or the candidate's account deletion) (Team E A-02). | Team | Open | Affects REQ-SEC-003, REQ-FUNC-016. |
+| 6 | Decide what minimal record, if any, remains of a deleted account so the other party of a match sees "Account deleted", consistently with the removal of the user's identifier within 24 hours (Team E A-03). | Team | Open | Affects REQ-FUNC-004, REQ-FUNC-019. |
+| 7 | Define a graph deletion mechanism (targeted deletion or exclusion at query time) that removes a deleted account from the graph store within 24 hours even when full rebuilds fail, with its retry interval and alert threshold (Group F F-01, Team E A-04). | Runxiao Qiu, Levis | Open | Affects REQ-FUNC-004, REQ-ML-008. |
+| 8 | Define the activity event and timestamp used for the 12-month inactivity rule, the process that runs the cleanup, and any data exempt from it (Team E A-05). | Team | Open | Affects REQ-COMP-001, REQ-FUNC-004. |
+| 9 | Define the categories included in and excluded from the personal-data export, including CVs, reports, flags and the other party's messages (Team E A-09). | Team | Open | Affects REQ-COMP-002, REQ-FUNC-021. |
+| 10 | Decide upload security for card images and CVs: content-based file validation, malware scanning or documented risk acceptance (C2), secure storage, and which users may download each file (Group F F-06). | Team | Open | Affects REQ-FUNC-008, REQ-FUNC-021, REQ-SEC-005. |
+| 11 | Resolve Iteration 1 requirements whose acceptance criteria depend on Iteration 2 or 3 features (REQ-FUNC-004, 009, 012, 014, 015, REQ-INT-001, REQ-SEC-003): move them, split their criteria per iteration, or define MVP behaviour (Group F F-02). | Team | Open | Affects 2.6 and the listed requirements. |
+| 12 | Select the formatter and linter of each component and the automated workflow that checks them (Team E A-12). | Team | Open | Affects REQ-MAINT-003, REQ-BUILD-002. |
+| 13 | Record the completed POC work and its evidence, and set a revised date for the remaining activities (Team E A-13). | POC owner | Open | Affects REQ-POC-001, Section 4. |
