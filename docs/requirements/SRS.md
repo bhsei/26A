@@ -1,10 +1,10 @@
 # Software Requirements Specification
 ## For AdoptAJob
 
-Version 0.7
+Version 0.8
 Prepared by Runxiao Qiu, Nils Förg, Peter Richard Shekidele, Levis Bangoh, Jean-Baptiste Simon
 Software Engineering course, Team A (repository `bhsei/26A`)  
-2026-10-29
+2026-11-04
 
 ## Table of Contents
 <!-- TOC -->
@@ -43,6 +43,7 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Team A | 2026-10-28 | Removed REQ-CM-001 (requirement change process; ID retired); closed all open issues in Appendix B; recorded GDPR as the jurisdiction for REQ-COMP-003 | 0.5 |
 | Team A | 2026-10-28 | SRS corrections after review of the product: REQ-COMP-003 set to GDPR; REQ-FUNC-004 and REQ-COMP-002 raised to Must; recorded the decisions behind the closed Appendix B issues in REQ-ML-001, REQ-ML-008 and REQ-COMP-001; added minimum age to REQ-FUNC-001; listed password reset, email verification, undo swipe, liked-cards view, moderation tools and blocking as out of scope; clarified REQ-INT-001, 003, 004, REQ-FUNC-001, 003, 004, 009, 011, 014, 017, 019, REQ-PERF-001, REQ-SEC-002, 006, REQ-AVAIL-001, REQ-BUILD-002, REQ-COMP-005, REQ-MAINT-001, REQ-INST-002, REQ-ML-002, 003, 004, 007, 008; aligned shall/should with priorities; updated milestones, apportioning, glossary, references and verification status | 0.6 |
 | Team A | 2026-10-29 | Restructured all requirements to the R1 requirement template: added ID, Title, Rationale, Verification Method and More Information fields; renamed AC to Acceptance Criteria; moved constraint and cross-references from Priority to More Information; updated 1.5 and the introduction of Section 3 | 0.7 |
+| Team A | 2026-11-04 | Corrections from the Group F (bhsei/26A#1) and Team E (bhsei/26A#2) peer reviews of v0.7: REQ-SEC-004 raised to Must (F-07); REQ-COMP-001 privacy notice extended with controller, recipients, profiling and rights procedure (F-05); measurable acceptance criteria for REQ-MAINT-002 (F-08, A-11), REQ-OBS-003, REQ-REL-002 (slow-service case), REQ-FUNC-015, REQ-COMP-005, REQ-PORT-001 and REQ-AVAIL-001 (F-08); corrected REQ-ML-004 exclusion criterion (A-01); added aggregate-limit test to REQ-SEC-006 (A-08); added proxy review to REQ-COMP-004 and scope limits to 3.6.4, REQ-ML-001 and REQ-ML-007 (A-06, A-07); versioned references R5, R6 and R8 (A-10) | 0.8 |
 
 ## 1. Introduction
 
@@ -105,11 +106,11 @@ v1.0 is an academic product demonstrated with synthetic data (A2). The complianc
 | R2 | General Data Protection Regulation, Regulation (EU) 2016/679 | European Union | 2016-04-27 | https://eur-lex.europa.eu/eli/reg/2016/679/oj | Normative (REQ-COMP-*) |
 | R3 | Web Content Accessibility Guidelines (WCAG) 2.1 | W3C | 2018-06-05 | https://www.w3.org/TR/WCAG21/ | Normative (REQ-INT-004) |
 | R4 | OpenAPI Specification 3.x | OpenAPI Initiative | 3.0 or later | https://spec.openapis.org/oas/ | Normative (REQ-INT-005) |
-| R5 | Architecture Design | Team A | Current | `docs/design/Architecture_Design.md` | Informative |
-| R6 | Database Design (PostgreSQL model and Neo4j projection) | Team A | Current | `docs/design/database.md` | Informative |
-| R7 | Neo4j Mapping | Team A | Current | `docs/design/neo4j-mapping.md` | Informative |
-| R8 | API contract | Team A | Current | `docs/design/openapi.yaml` | Informative |
-| R9 | Project plan and Gantt chart | Team A | Current | `plans/` | Informative |
+| R5 | Architecture Design | Team A | v1.0, commit `d941876` (2026-10-18) | `docs/design/Architecture_Design.md` | Informative |
+| R6 | Database Design (PostgreSQL model and Neo4j projection) | Team A | v0.1, commit `d941876` (2026-10-18) | `docs/design/database.md` | Informative |
+| R7 | Neo4j Mapping | Team A | Current <!-- TODO A-10: file not yet in the repository; add it or point to R6 section 7 --> | `docs/design/neo4j-mapping.md` | Informative |
+| R8 | API contract | Team A | 0.1.0, commit `2aa078c` (2026-10-18) | `docs/design/openapi.yaml` | Informative |
+| R9 | Project plan and Gantt chart | Team A | Current <!-- TODO A-10: plans/ holds only BACKLOG.md and CHANGELOG.md; add the plan/Gantt or update this reference, then record its commit --> | `plans/` | Informative |
 
 ### 1.5 Document Overview
 Section 2 gives the product context, users and constraints. Section 3 contains the verifiable requirements, written with the requirement template of R1. Section 4 summarises the verification method, test artifact and status of every requirement. Section 5 holds non-normative material and open issues.
@@ -456,7 +457,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 - Statement: The system shall let the candidate red-flag a card, which removes it and lowers or excludes similar cards (REQ-ML-004).
 - Rationale: Candidates need a strong way to stop seeing a kind of card they dislike, which a pass alone does not express.
 - Priority: Must
-- Acceptance Criteria: See REQ-ML-004.
+- Acceptance Criteria: After a red flag, the card never appears again in that candidate's feed and is not added to the recruiter's interested list; the exclusion and scoring effects on other cards are verified by the acceptance criteria of REQ-ML-004.
 - Verification Method: Test. Artifact: TC-FUNC-015 (Section 4).
 - More Information: Ranking and exclusion effect: REQ-ML-004. Definition: "Red flag" in 1.3.
 
@@ -641,9 +642,9 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-SEC-004
 - Title: Transport security
-- Statement: All traffic between the app and the backend should use HTTPS (TLS 1.2 or higher) in any deployed environment.
-- Rationale: Without encryption, credentials, tokens and personal data would travel in clear text over public networks.
-- Priority: Should
+- Statement: All traffic between the app and the backend shall use HTTPS (TLS 1.2 or higher) in any deployed environment.
+- Rationale: Without encryption, credentials, tokens and personal data would travel in clear text over public networks, which would undermine REQ-SEC-001 to REQ-SEC-003 and C3.
+- Priority: Must
 - Acceptance Criteria: Plain HTTP requests to the deployed API are refused or redirected.
 - Verification Method: Test. Artifact: TC-SEC-004 (Section 4).
 - More Information: Applies to deployed environments only; local development (REQ-INST-001) may use HTTP. Related: REQ-INT-005.
@@ -666,7 +667,10 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 - Statement: The API should limit failed sign-in attempts to 10 per account per source IP address per 15 minutes, and to 100 per source IP address per 15 minutes across all accounts. Limits from one IP address should not block sign-in from other IP addresses.
 - Rationale: Without limits, an attacker can guess passwords by trying many of them; limiting per IP address avoids locking out the real user.
 - Priority: Should
-- Acceptance Criteria: After 10 failed attempts on one account from one IP within 15 minutes, the 11th attempt from that IP returns 429 even with the correct password; a correct sign-in to the same account from another IP succeeds.
+- Acceptance Criteria:
+  - After 10 failed attempts on one account from one IP within 15 minutes, the 11th attempt from that IP returns 429 even with the correct password; a correct sign-in to the same account from another IP succeeds.
+  - After 100 failed attempts from one IP within 15 minutes, spread over at least 11 accounts with at most 9 attempts each (so no per-account limit is reached), the 101st attempt from that IP returns 429 for any account; a correct sign-in from another IP succeeds.
+  - After the 15-minute window has passed, a correct sign-in from the limited IP succeeds again.
 - Verification Method: Test. Artifact: TC-SEC-006 (Section 4).
 - More Information: Related: REQ-FUNC-002, REQ-INT-007.
 
@@ -701,7 +705,9 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 - Statement: If the matching service does not answer within 1 s, the backend should return a feed ordered by most recently published cards.
 - Rationale: The matching service is a separate component that may be slow or down, and the feed is the core screen, so it must keep working.
 - Priority: Should
-- Acceptance Criteria: With the matching service stopped, the feed still loads within the REQ-PERF-001 target.
+- Acceptance Criteria:
+  - With the matching service stopped, the feed is returned in fallback order within the REQ-PERF-001 target.
+  - With the matching service delayed to answer after 2 s, the backend stops waiting after 1 s and returns the feed in fallback order within the REQ-PERF-001 target.
 - Verification Method: Test. Artifact: TC-REL-002 (Section 4).
 - More Information: Interface: REQ-INT-006. Also the Iteration 1 ordering (2.6). Graph store fallback: REQ-ML-007.
 
@@ -714,7 +720,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 - Statement: The demo deployment should be available during the review sessions and the final presentation listed in the project plan (REQ-DEAD-001).
 - Rationale: The product is assessed through demos; if the deployment is down during a review, the work cannot be evaluated.
 - Priority: Should
-- Acceptance Criteria: The health-check endpoint (REQ-OBS-003) responds 200 at the start and end of each listed session.
+- Acceptance Criteria: The health-check endpoint (REQ-OBS-003) of each service responds 200 at the start and at the end of each listed session, and the session log records the time and result of each check.
 - Verification Method: Demonstration. Artifact: Session log (Section 4).
 - More Information: Assumption A4. Related: REQ-DEAD-001, REQ-OBS-003.
 
@@ -749,7 +755,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 - Statement: Each service should expose a `GET /health` endpoint.
 - Rationale: The team and the demo setup need a quick way to see whether a service and its database are up.
 - Priority: Should
-- Acceptance Criteria: The endpoint returns 200 when the service and its database connection are up.
+- Acceptance Criteria: The endpoint returns 200 when the service and its database connection are up; with the database stopped, it returns 503 within 2 s with the error body of REQ-INT-007.
 - Verification Method: Test. Artifact: TC-OBS-003 (Section 4).
 - More Information: Exempt from authentication (REQ-SEC-002). Used by REQ-AVAIL-001.
 
@@ -759,11 +765,11 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-COMP-001
 - Title: Privacy notice and consent
-- Statement: At registration, the app shall display a privacy notice describing which personal data is collected, why, on which legal basis, and how long it is kept, and shall require the user to accept it before the account is created. Personal data shall be kept only for these periods: account data until the account is deleted or has been inactive for 12 months, after which it is deleted as in REQ-FUNC-004; CVs until the match ends or the account is deleted; reports for 12 months after creation.
-- Rationale: The GDPR requires telling users what is processed, why, on which legal basis and for how long, and keeping data no longer than needed (C3).
+- Statement: At registration, the app shall display a privacy notice stating: the identity and contact details of the data controller; which personal data is collected, why, on which legal basis, and how long it is kept; the recipients of the data (recruiters of the companies whose cards the candidate liked, REQ-SEC-003); that cards are ranked automatically from the candidate's background and swipes (REQ-ML-001, REQ-ML-007) while match decisions are always made by a recruiter (REQ-ML-006); and how users exercise their rights (in-app export and deletion, REQ-COMP-002, REQ-FUNC-004, and the controller contact for other requests). The app shall require the user to accept it before the account is created. Personal data shall be kept only for these periods: account data until the account is deleted or has been inactive for 12 months, after which it is deleted as in REQ-FUNC-004; CVs until the match ends or the account is deleted; reports for 12 months after creation.
+- Rationale: The GDPR (Articles 13 and 21 to 22) requires telling users who is responsible for their data, what is processed, why, on which legal basis, for how long, who receives it, whether profiling is used and how to exercise their rights, and keeping data no longer than needed (C3).
 - Priority: Must
-- Acceptance Criteria: Registration cannot be completed without ticking the acceptance checkbox; the notice states the retention periods and is reachable from the profile screen; a cleanup run on synthetic data with shifted timestamps deletes the inactive accounts, the CVs of ended matches and the old reports, and nothing else.
-- Verification Method: Test (manual). Artifact: TC-COMP-001 (Section 4).
+- Acceptance Criteria: Registration cannot be completed without ticking the acceptance checkbox; inspection of the notice finds each item listed in the statement, including the retention periods; the notice is reachable from the profile screen; a cleanup run on synthetic data with shifted timestamps deletes the inactive accounts, the CVs of ended matches and the old reports, and nothing else.
+- Verification Method: Test (manual), Inspection. Artifact: TC-COMP-001 (Section 4).
 - More Information: Constraint C3. R2. Account deletion: REQ-FUNC-004. Decision recorded in Appendix B, issue 1.
 
 **REQ-COMP-002: Data subject rights**
@@ -792,10 +798,10 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 
 - ID: REQ-COMP-004
 - Title: Non-discrimination
-- Statement: The matching logic shall not use gender, age, ethnicity, nationality, religion, disability, marital status or photos as ranking inputs.
-- Rationale: Ranking on protected attributes could lead to discriminatory hiring, which is unlawful in the EU and goes against the goal of fair matching.
+- Statement: The matching logic shall not use gender, age, ethnicity, nationality, religion, disability, marital status or photos as ranking inputs. The permitted ranking inputs (background fields, tags, swipes and co-like relationships) shall be reviewed for attributes that could act as proxies for these attributes, and the scope and outcome of the review shall be documented.
+- Rationale: Ranking on protected attributes could lead to discriminatory hiring, which is unlawful in the EU and goes against the goal of fair matching. Excluding direct inputs does not by itself prevent indirect discrimination through proxies, so the remaining inputs are reviewed.
 - Priority: Must
-- Acceptance Criteria: Code and data-schema inspection shows none of these attributes is an input to REQ-ML-001 or REQ-ML-007.
+- Acceptance Criteria: Code and data-schema inspection shows none of these attributes is an input to REQ-ML-001 or REQ-ML-007; a documented proxy review lists each permitted ranking input with its assessment.
 - Verification Method: Inspection. Artifact: Code and schema review (Section 4).
 - More Information: Applies to REQ-ML-001 and REQ-ML-007; these attributes are also excluded from the graph store (REQ-ML-008). Ethics: 3.6.4.
 
@@ -806,7 +812,7 @@ No hardware interface requirements in v1.0. Card images and CV files are selecte
 - Statement: All artifacts should be stored in the team repository and follow the commit convention defined in 1.5. Code changes should be reviewed through pull requests; document reviews and defects should be tracked in GitHub Issues.
 - Rationale: Shared conventions and reviews keep the work of five people consistent and traceable, and make it possible to assess.
 - Priority: Should
-- Acceptance Criteria: Inspection of the repository, its pull requests and its commit history.
+- Acceptance Criteria: Inspection of the repository at each milestone of REQ-DEAD-001 finds that every commit on `dev` and `main` since the previous milestone follows the convention of 1.5, every pull request merged into `dev` or `main` has at least one review by another team member, and every peer review of an SRS version is recorded in a GitHub Issue.
 - Verification Method: Inspection. Artifact: Repository review (Section 4).
 - More Information: Commit convention: 1.5. Contribution rules: `CONTRIBUTING.md`.
 
@@ -880,7 +886,7 @@ No distribution requirements in v1.0; the system runs on a single host (see REQ-
 - Statement: Backend and matching-service unit tests should cover at least 60% of lines.
 - Rationale: A minimum coverage makes it likely that regressions in core logic are caught; 60% is achievable within the schedule.
 - Priority: Should
-- Acceptance Criteria: Coverage report attached to the test report.
+- Acceptance Criteria: The coverage report attached to the test report shows at least 60% line coverage for the backend and at least 60% for the matching service, each measured separately.
 - Verification Method: Analysis. Artifact: Coverage report (Section 4).
 - More Information: Coverage is reported in the test report (M6, REQ-DEAD-001). Related: REQ-BUILD-002.
 
@@ -906,7 +912,7 @@ No reusability requirements in v1.0.
 - Statement: The app shall run on Android 10 or higher; it may run on iOS 15 or higher.
 - Rationale: Most target users have Android phones (A1), and Android can be tested without paid hardware or developer accounts (C2); iOS is welcome but not guaranteed.
 - Priority: Must (Android), Could (iOS)
-- Acceptance Criteria: Demonstration on at least one Android device or emulator; iOS on simulator if available.
+- Acceptance Criteria: On an Android 10 device or emulator, a tester completes the main user flows of Appendix A (candidate and recruiter) without crashes or blocked screens; if an iOS 15 simulator is available, the same flows are run on it and the result is recorded.
 - Verification Method: Demonstration. Artifact: TC-PORT-001 (Section 4).
 - More Information: Assumption A1. Constraint C2. Android in all iterations, iOS in Iteration 3 (2.6).
 
@@ -972,7 +978,7 @@ No change management requirements in v1.0. SRS changes follow the conventions in
 - Priority: Must
 - Acceptance Criteria: For a test candidate with known inputs and the documented weights, the returned order equals the order computed by hand in the test fixture.
 - Verification Method: Test. Artifact: TC-ML-001 (Section 4).
-- More Information: R6 section 7.4. Related: REQ-INT-006, REQ-ML-007, REQ-COMP-004. Decision recorded in Appendix B, issue 2.
+- More Information: R6 section 7.4. Related: REQ-INT-006, REQ-ML-007, REQ-COMP-004. Decision recorded in Appendix B, issue 2. The acceptance criteria verify that the documented score is computed and applied correctly; they do not measure real-world recommendation quality, which cannot be assessed on synthetic data (REQ-ML-005).
 
 **REQ-ML-002: Cold start**
 
@@ -1003,7 +1009,10 @@ No change management requirements in v1.0. SRS changes follow the conventions in
 - Statement: After a red flag on a Job Card, cards from the same company with the same job title shall be excluded from the feed. After a red flag on a Company Card, all cards of that company shall be excluded. In both cases, every remaining card sharing at least one tag with the flagged card shall receive a lower score than before the flag.
 - Rationale: A candidate who red-flags a card expects not to see that company or role again; showing it anyway would make the flag useless.
 - Priority: Must
-- Acceptance Criteria: In the next 20 feed cards, no card is excluded by the rule above; for each card sharing a tag with the flagged card, the score after the flag is strictly lower than before.
+- Acceptance Criteria:
+  - After a red flag on a Job Card, no card from the same company with the same job title appears in the candidate's following feed requests.
+  - After a red flag on a Company Card, no card of that company appears in the candidate's following feed requests.
+  - In both cases, for each remaining card sharing a tag with the flagged card, the score after the flag is strictly lower than before; cards sharing no tag keep their score.
 - Verification Method: Test. Artifact: TC-ML-004 (Section 4).
 - More Information: Related: REQ-FUNC-015. Guardrails: 3.6.3.
 
@@ -1016,7 +1025,7 @@ No change management requirements in v1.0. SRS changes follow the conventions in
 - Priority: Should
 - Acceptance Criteria: With synthetic data where candidates A and B both liked card X and B also liked card Y, card Y's score in A's feed is higher after the next graph rebuild (REQ-ML-008) than before B's like; with the graph store stopped, A's feed still loads within the REQ-PERF-001 target.
 - Verification Method: Test. Artifact: TC-ML-007 (Section 4).
-- More Information: R6, R7. Product perspective: 2.1. Related: REQ-ML-008, REQ-REL-002.
+- More Information: R6, R7. Product perspective: 2.1. Related: REQ-ML-008, REQ-REL-002. As for REQ-ML-001, the acceptance criteria verify the scoring behaviour, not real-world recommendation quality.
 
 #### 3.6.2 Data Management
 **REQ-ML-005: Training and evaluation data**
@@ -1045,7 +1054,7 @@ No change management requirements in v1.0. SRS changes follow the conventions in
 The feed exclusions are defined in REQ-FUNC-009, REQ-FUNC-011 and REQ-ML-004.
 
 #### 3.6.4 Ethics
-No explanation feature in v1.0. Fairness constraints are defined in REQ-COMP-004.
+No explanation feature in v1.0. Fairness constraints are defined in REQ-COMP-004: v1.0 guarantees that protected attributes are not ranking inputs and that the remaining inputs have been reviewed for proxies. It does not claim that outcomes are statistically equal across protected groups; the synthetic demonstration data (REQ-ML-005) is too small to support such a conclusion.
 
 #### 3.6.5 Human-in-the-Loop
 **REQ-ML-006: Human decision**
