@@ -94,7 +94,7 @@ slice.
 | ARCH-003 | Define the canonical PostgreSQL-to-Neo4j data mapping | Alba, Levis | DB-002 | Mapping document or design section | Planned |
 | ARCH-004 | Define graph freshness, retry, deletion and reconciliation policy | Alba, Levis | ARCH-003 | Design decision | Planned |
 | API-001 | Create the OpenAPI 3 baseline | Jean-Baptiste SIMON | ARCH-001 | `docs/design/openapi.yaml` | Done |
-| API-002 | Validate public/mobile and internal/matching contracts | Jean-Baptiste SIMON, Peter, Nils | API-001 | Validator output and review evidence | In progress |
+| API-002 | Validate public/mobile and internal/matching contracts | Jean-Baptiste SIMON, Peter, Nils | API-001 | Validator output and review evidence | Done |
 
 ## Backend work
 
@@ -108,7 +108,7 @@ slice.
 | BACKEND-006 | Implement recruiter company and card routes | Jean-Baptiste SIMON | BACKEND-005, API-002 | Protected card endpoints and tests | Planned |
 | BACKEND-007 | Implement candidate feed and idempotent swipes | Jean-Baptiste SIMON | BACKEND-005, MATCH-002 | Feed/swipe routes and persistence tests | Planned |
 | BACKEND-008 | Integrate the backend with the matching service | Jean-Baptiste SIMON | BACKEND-007, MATCH-001, API-002 | Internal client, timeout and fallback tests | Planned |
-| BACKEND-009 | Add backend lint, formatting, coverage and component README | Jean-Baptiste SIMON | BACKEND-001 | Backend quality checks | Planned |
+| BACKEND-009 | Add backend lint, formatting, coverage and component README | Jean-Baptiste SIMON | BACKEND-001 | Backend quality checks | Done |
 
 ## Matching, graph and data pipeline
 
@@ -154,3 +154,13 @@ slice.
    backend/mobile implementation.
 4. The team must confirm the GDPR retention policy for both stores.
 5. The team must approve the proposed MIT licence before adding a licence file.
+
+## Recent W8 evidence
+
+- OpenAPI validation now passes with one expected local-development warning for
+  the `localhost` server URL.
+- Fastify is pinned to `5.12.7`; the Ajv `fast-uri` transitive dependency is
+  constrained to the fixed `3.1.9` release through npm overrides.
+- `npm audit --omit=dev` reports zero production vulnerabilities.
+- Backend `typecheck`, tests (3 passing) and build pass after the dependency
+  update.
