@@ -2,6 +2,9 @@ openapi: 3.0.3
 info:
   title: AdoptAJob Backend API
   version: 0.1.0
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
   description: |
     Local proof-of-concept REST API for AdoptAJob. The backend owns
     PostgreSQL and delegates candidate ranking to the internal matching
@@ -11,15 +14,22 @@ servers:
     description: Local development
 tags:
   - name: System
+    description: Health and readiness probes
   - name: Authentication
+    description: Account registration and authentication
   - name: Candidate
+    description: Candidate profiles, feeds and swipes
   - name: Recruiter
+    description: Recruiter card management
   - name: Internal
+    description: Service-to-service endpoints
 paths:
   /health:
     get:
+      summary: Check backend health
       tags: [System]
       operationId: getHealth
+      security: []
       responses:
         "200":
           description: Service is running
@@ -27,10 +37,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /ready:
     get:
+      summary: Check backend readiness
       tags: [System]
       operationId: getReadiness
+      security: []
       responses:
         "200":
           description: Service dependencies are ready
@@ -40,10 +54,14 @@ paths:
                 $ref: "#/components/schemas/ReadinessResponse"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /auth/register:
     post:
+      summary: Register a user account
       tags: [Authentication]
       operationId: register
+      security: []
       requestBody:
         required: true
         content:
@@ -67,8 +85,10 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
   /auth/login:
     post:
+      summary: Authenticate a user
       tags: [Authentication]
       operationId: login
+      security: []
       requestBody:
         required: true
         content:
@@ -88,6 +108,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
   /candidates/me:
     get:
+      summary: Retrieve the current candidate profile
       tags: [Candidate]
       operationId: getCandidateProfile
       security: [{ bearerAuth: [] }]
@@ -101,6 +122,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
     put:
+      summary: Update the current candidate profile
       tags: [Candidate]
       operationId: updateCandidateProfile
       security: [{ bearerAuth: [] }]
@@ -123,6 +145,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
   /candidates/me/feed:
     get:
+      summary: Retrieve the candidate job feed
       tags: [Candidate]
       operationId: getCandidateFeed
       security: [{ bearerAuth: [] }]
@@ -143,6 +166,7 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
   /candidates/me/swipes:
     post:
+      summary: Record a candidate swipe
       tags: [Candidate]
       operationId: createSwipe
       security: [{ bearerAuth: [] }]
@@ -174,6 +198,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
   /recruiters/me/cards:
     get:
+      summary: List recruiter job cards
       tags: [Recruiter]
       operationId: listRecruiterCards
       security: [{ bearerAuth: [] }]
@@ -189,6 +214,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
+      summary: Create a recruiter job card
       tags: [Recruiter]
       operationId: createRecruiterCard
       security: [{ bearerAuth: [] }]
@@ -211,6 +237,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
   /internal/matching/rank:
     post:
+      summary: Rank job cards for a candidate
       tags: [Internal]
       operationId: rankCards
       security: [{ internalServiceAuth: [] }]
