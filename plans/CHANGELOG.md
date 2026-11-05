@@ -132,8 +132,7 @@ The following work is committed in `2aa078c`, `e3d7fd3`, `6132f1e` and
 ### API contract baseline
 
 - **Responsible contributor:** Jean-Baptiste SIMON
-- **Tasks:** API-001 completed; API-002 remains pending final validator output
-  and external review
+- **Tasks:** API-001 and API-002 completed for the current contract baseline
 - **Evidence:** `docs/design/openapi.yaml`
 - **Change:** Defined the public REST contract for health, readiness,
   authentication, candidate profile/feed/swipes, recruiter cards and the
@@ -144,7 +143,7 @@ The following work is committed in `2aa078c`, `e3d7fd3`, `6132f1e` and
 ### Backend scaffold
 
 - **Responsible contributor:** Jean-Baptiste SIMON
-- **Task:** BACKEND-001 in progress
+- **Task:** BACKEND-001 and BACKEND-009 completed for the current foundation
 - **Evidence:** `src/backend/src/`, `src/backend/tests/app.test.ts`,
   `src/backend/tsconfig.json`, `src/backend/package.json`
 - **Change:** Added the Fastify app factory, environment configuration,
@@ -152,8 +151,8 @@ The following work is committed in `2aa078c`, `e3d7fd3`, `6132f1e` and
   explicit `501 Not Implemented` boundaries for authentication and feed
   operations. Added initial tests without claiming business functionality.
 - **Validation status:** `npm run typecheck`, `npm test` and `npm run build`
-  passed after dependency installation. Redocly still reports missing
-  operation summaries in the OpenAPI document.
+  passed after dependency installation. Redocly validates the contract; the
+  remaining localhost warning is documented in the latest security entry.
 
 ### Worklog
 
@@ -174,8 +173,32 @@ W<N> - Project tracking; record API and backend progress and validation blockers
 ```
 
 Those three implementation commits are already present in the history. The
-remaining implementation action is to add OpenAPI operation summaries, rerun
-Redocly, and then record the final API-002 status separately.
+latest validation and dependency-security work is proposed as the separate
+three-commit batch below.
+
+## OpenAPI validation and dependency security
+
+- **Responsible contributor:** Jean-Baptiste SIMON
+- **Status:** Completed
+- **Evidence:** `docs/design/openapi.yaml`, `src/backend/package.json`,
+  `src/backend/package-lock.json`
+- **Change:** Added explicit public-operation security settings, health/readiness
+  error responses, tag descriptions and the proposed MIT licence URL. Updated
+  Fastify to `5.12.7` and constrained Ajv's vulnerable `fast-uri` transitive
+  dependency to `3.1.9`.
+- **Validation:** Redocly validation passes with one expected warning for the
+  local `localhost` server URL. `npm run typecheck`, `npm test` (3 tests),
+  `npm run build` and `npm audit --omit=dev` pass; the production audit reports
+  zero vulnerabilities. The Node 22 engine warning remains because validation
+  used Node 24.20.0.
+
+## Proposed commit split for the current batch
+
+```text
+W<N> - API validation; complete OpenAPI lint compliance and security metadata
+W<N> - Backend dependency security; update Fastify and pin the fixed Ajv URI parser
+W<N> - Project tracking; record validation and dependency audit evidence
+```
 
 ## Next milestones
 

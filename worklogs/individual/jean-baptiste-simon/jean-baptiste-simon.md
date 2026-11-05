@@ -54,3 +54,23 @@
 - **Evidence:** `worklogs/individual/jean-baptiste-simon/Team_B_SRS_Review_Report.md`
 - **Review issue:** `https://github.com/bhsei/26B/issues/2`
 - **Result:** Revision recommended before Team B freezes its SRS v1.0 baseline.
+
+## 2026-11-02
+
+### OpenAPI validation and dependency security
+
+- **Tasks:** API-002, BACKEND-009
+- **Work:** Completed the OpenAPI metadata and public-security corrections,
+  added explicit health/readiness error responses, and updated the backend
+  dependency policy. Fastify is pinned to `5.12.7`; Ajv's vulnerable
+  transitive `fast-uri` release is constrained to `3.1.9`.
+- **Evidence:** `docs/design/openapi.yaml`,
+  `src/backend/package.json`, `src/backend/package-lock.json`
+- **Validation:** Redocly validation passed with one expected warning for the
+  local `localhost` server URL. `npm run typecheck`, `npm test` (3 tests),
+  `npm run build` and `npm audit --omit=dev` passed. The production audit
+  reports zero vulnerabilities.
+- **Environment note:** Node.js `24.20.0` was used although the project
+  engine policy remains Node.js `22.x`; npm continues to report `EBADENGINE`.
+- **Next action:** Implement `BACKEND-005` authentication after confirming
+  the JWT/session choice and Prisma field compatibility with Alba.
