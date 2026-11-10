@@ -42,7 +42,7 @@ the SQL that creates it is in
 
 | Store | Role | Status |
 |-------|------|--------|
-| PostgreSQL 16 | Main database and single source of truth for all application data | Implemented, no data yet (seed data is tracked in `plans/BACKLOG.md`) |
+| PostgreSQL 16 | Main database and single source of truth for all application data | Implemented; synthetic demo data from `npm run db:seed` (see the [backend README](../../src/backend/README.md#seed-data)) |
 | Neo4j 5 Community | Harmonized graph projection used by the matching service | Planned, owner: Levis |
 
 ## 2. Architecture Decisions
@@ -274,7 +274,7 @@ To change the schema:
 | 2 | Define the canonical PostgreSQL-to-Neo4j field mapping and deduplication rules. | Alba, Levis | Open |
 | 3 | Select and evaluate the matching algorithm on synthetic graph fixtures. | Nils | Open |
 | 4 | Implement the Neo4j pipeline, including freshness, retry, idempotency and deletion checks. | Alba, Levis | Open |
-| 5 | Load synthetic seed data with overlapping candidate likes so graph ranking has patterns to find. | Alba, Nils | Open |
+| 5 | Load synthetic seed data with overlapping candidate likes so graph ranking has patterns to find. | Alba, Nils | In progress: `npm run db:seed` creates shared likes from matching backgrounds; Nils to confirm they are enough for REQ-ML-007. |
 | 6 | Confirm the GDPR retention and deletion policy for both stores. | Team | Open |
 | 7 | Decide how sign-out and account deletion invalidate tokens (REQ-SEC-002); a `users.tokens_valid_after` column is proposed. | Alba, Jean-Baptiste | Open |
 | 8 | Keep matches visible as "Account deleted" for the other party (REQ-FUNC-004): match user columns would become nullable with `ON DELETE SET NULL` instead of cascading. Depends on SRS open issue 11. | Alba, Jean-Baptiste | Open |
