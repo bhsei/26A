@@ -66,17 +66,24 @@ enum CardKind {
   @@map("card_kind")
 }
 
+// Deleting a card sets DELETED instead of removing the row, so matches on it
+// stay visible as "Position closed" (REQ-FUNC-009).
 enum CardStatus {
   DRAFT
   PUBLISHED
   UNPUBLISHED
+  DELETED
 
   @@map("card_status")
 }
 
+// Every feed signal is one swipe action: like, pass, green flag or red flag
+// (REQ-FUNC-011..015).
 enum SwipeAction {
   LIKE
   PASS
+  GREEN_FLAG
+  RED_FLAG
 
   @@map("swipe_action")
 }
@@ -89,13 +96,6 @@ enum RecruiterDecision {
   @@map("recruiter_decision")
 }
 
-enum FlagKind {
-  GREEN
-  RED
-
-  @@map("flag_kind")
-}
-
 enum ReportTarget {
   CARD
   USER
@@ -105,7 +105,8 @@ enum ReportTarget {
 }
 
 // ---------------------------------------------------------------------------
-// Accounts and companies (REQ-FUNC-001..004, REQ-SEC-001, REQ-COMP-001)
+// Accounts and companies (REQ-FUNC-001..004, REQ-FUNC-025, REQ-SEC-001,
+// REQ-COMP-001)
 // ---------------------------------------------------------------------------
 
 model User {
@@ -116,8 +117,9 @@ model User {
   passwordHash         String   @map("password_hash")
   role                 Role
   displayName          String?  @map("display_name") @db.VarChar(100)
-  // Recruiters belong to one company; several recruiters may share it.
-  companyId            String?  @map("company_id") @db.Uuid
+  // Recruiters belong to one company; several recruiters may share it. A CHECK
+  // constraint keeps it null for candidates (REQ-FUNC-003).
+  companyId           String?  @map("company_id") @db.Uuid
   privacyConsentAt     DateTime @map("privacy_consent_at") @db.Timestamptz(3)
   privacyNoticeVersion String   @map("privacy_notice_version") @db.VarChar(20)
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -127,11 +129,12 @@ model User {
   candidateProfile CandidateProfile?
   cardsCreated     Card[]            @relation("CardCreatedBy")
   swipes           Swipe[]
-  flags            Flag[]
   candidateMatches Match[]           @relation("MatchCandidate")
   recruiterMatches Match[]           @relation("MatchRecruiter")
   messages         Message[]
   reports          Report[]
+  invitationsMade  InvitationCode[]  @relation("InvitationCreatedBy")
+  invitationsUsed  InvitationCode[]  @relation("InvitationUsedBy")
 
   @@index([companyId])
   @@map("users")
@@ -145,10 +148,33 @@ model Company {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  recruiters User[]
-  cards      Card[]
+  recruiters  User[]
+  cards       Card[]
+  invitations InvitationCode[]
 
   @@map("companies")
+}
+
+// Single-use code that lets a recruiter join an existing company instead of
+// creating one (REQ-FUNC-025). A code is used once usedAt is set; the backend
+// sets usedAt and usedById in one conditional update so two recruiters cannot
+// use the same code. usedById becomes null if that recruiter deletes their
+// account, but usedAt stays, so the code remains used.
+model InvitationCode {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId   String    @map("company_id") @db.Uuid
+  code        String    @unique @db.VarChar(32)
+  createdById String?   @map("created_by_id") @db.Uuid
+  usedById    String?   @map("used_by_id") @db.Uuid
+  usedAt      DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  usedBy    User?   @relation("InvitationUsedBy", fields: [usedById], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@map("invitation_codes")
 }
 
 // ---------------------------------------------------------------------------
@@ -217,7 +243,13 @@ model CandidateTag {
 // ---------------------------------------------------------------------------
 
 // Job cards require title, description, location, contract type and at least
-// one tag; the backend enforces this because company cards do not.
+// one tag (REQ-FUNC-008). A CHECK constraint in the migration requires location
+// and contract type when kind is JOB; the backend checks the tag.
+//
+// A recruiter deleting a card sets status to DELETED (REQ-FUNC-009): the card
+// leaves every feed, its pending likes leave the interested-candidates list,
+// and its matches remain as "Position closed". Rows are removed only when the
+// whole company is deleted.
 model Card {
   id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   companyId      String        @map("company_id") @db.Uuid
@@ -242,7 +274,6 @@ model Card {
   createdBy User?     @relation("CardCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   tags      CardTag[]
   swipes    Swipe[]
-  flags     Flag[]
   matches   Match[]
 
   @@index([companyId])
@@ -255,9 +286,15 @@ model Card {
 // Feed signals (REQ-FUNC-011..017, REQ-REL-001, REQ-ML-001..004)
 // ---------------------------------------------------------------------------
 
-// One swipe per candidate and card. The unique key makes repeated requests
-// idempotent (REQ-REL-001). Likes carry the recruiter decision; passes keep it
-// null.
+// One swipe per candidate and card, whatever the action, so a card leaves the
+// feed after any swipe (REQ-FUNC-011). The unique key also makes repeated
+// requests idempotent (REQ-REL-001).
+//
+// Only a like on a Job Card puts the candidate on the interested-candidates
+// list, so only those likes carry a recruiter decision (PENDING at first). A
+// like on a Company Card is a ranking signal only and keeps decision null
+// (REQ-FUNC-012). The backend sets the decision from the card kind; the CHECK
+// constraint only guarantees that non-like actions never carry one.
 model Swipe {
   id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   candidateId String             @map("candidate_id") @db.Uuid
@@ -274,23 +311,6 @@ model Swipe {
   // Interested-candidates list per card (REQ-FUNC-016).
   @@index([cardId, action, decision])
   @@map("swipes")
-}
-
-// Flags are separate from swipes: a candidate may flag a card and still like
-// or pass it. Green-flagged cards stay in the feed; red-flagged cards leave it.
-model Flag {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  candidateId String   @map("candidate_id") @db.Uuid
-  cardId      String   @map("card_id") @db.Uuid
-  kind        FlagKind
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-
-  candidate User @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  card      Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
-
-  @@unique([candidateId, cardId])
-  @@index([cardId])
-  @@map("flags")
 }
 
 // ---------------------------------------------------------------------------

@@ -9,9 +9,10 @@ This directory will contain generated fixtures for tests and local demos.
 ## Mock data
 
 [`mock-data.sql`](mock-data.sql) is a small hand-written dataset with fixed IDs
-for development and tests: 3 companies, 3 recruiters, 4 candidates, 17 tags,
-7 cards (6 published, 1 draft), swipes, flags, one match with chat messages,
-one application and one report. Its header lists the expected results, such as
+for development and tests: 3 companies, 3 recruiters, 2 invitation codes
+(one valid, one used), 4 candidates, 17 tags, 7 cards (6 published, 1 draft),
+swipes (likes, passes and flags), one match with chat messages, one
+application and one report. Its header lists the expected results, such as
 each candidate's feed and the graph recommendations (REQ-ML-007).
 
 It is not the demo seed (see `plans/BACKLOG.md`). **It empties every application
