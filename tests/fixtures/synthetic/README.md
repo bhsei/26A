@@ -15,9 +15,10 @@ swipes (likes, passes and flags), one match with chat messages, one
 application and one report. Its header lists the expected results, such as
 each candidate's feed and the graph recommendations (REQ-ML-007).
 
-It is not the demo seed (see `plans/BACKLOG.md`). **It empties every application
-table first**, so load it only into your local database. From the repository
-root:
+It is not the demo seed: for a larger generated dataset, run
+`npm run db:seed` in `src/backend` (see its README). **It empties every
+application table first**, so load it only into your local database. From the
+repository root:
 
 ```bash
 docker compose exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < tests/fixtures/synthetic/mock-data.sql

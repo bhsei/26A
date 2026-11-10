@@ -50,7 +50,13 @@ Run from the repository root unless stated otherwise.
    npm run db:generate
    ```
 
-4. Start the backend in development mode:
+4. Optionally load synthetic demo data (see [Seed data](#seed-data)):
+
+   ```bash
+   npm run db:seed
+   ```
+
+5. Start the backend in development mode:
 
    ```bash
    npm run dev
@@ -67,12 +73,53 @@ Run from the repository root unless stated otherwise.
 | `npm run db:migrate -- --name <change>` | Create and apply a new migration after editing `prisma/schema.prisma`. |
 | `npm run db:status` | Show which migrations are applied. |
 | `npm run db:reset` | **Destructive:** drop the local database and reapply all migrations. |
+| `npm run db:seed` | **Destructive:** empty every table and load synthetic demo data (see below). |
 | `npm run db:generate` | Regenerate the Prisma client in `node_modules/.generated/prisma` (not committed). |
 | `npm run db:validate` | Validate `prisma/schema.prisma`. |
 | `npm run dev` | Start the Fastify server with file watching. |
 | `npm run build` | Compile TypeScript to `dist/`. |
-| `npm run typecheck` | Run the TypeScript compiler without emitting files. |
+| `npm run typecheck` | Type-check `src/`, then `prisma/` (seed) and `tests/` without emitting files. |
 | `npm test` | Run backend tests. |
+
+## Seed data
+
+`npm run db:seed` loads a synthetic dataset for demos and tests (REQ-INST-002).
+It empties every application table first and refuses to run unless
+`DATABASE_URL` points to `localhost`.
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `--cards <n>` | 50 | Published Job Cards. Each company also gets one published Company Card on top. `--cards 1000` gives the load-test size (REQ-PERF-001). |
+| `--candidates <n>` | 10 | Candidate accounts, the two demo candidates included. |
+| `--companies <n>` | max(10, cards / 25) | Companies, spread over 5 sectors. |
+| `--seed <n>` | 2026 | Random seed. The same seed always gives the same data and IDs. |
+
+Pass options after `--`, for example `npm run db:seed -- --cards 1000`.
+
+The default run creates 10 companies in 5 sectors, 14 recruiters (every third
+company has a second recruiter who joined with an invitation code), 10
+candidates, 45 tags, 50 published Job Cards and 10 published Company Cards
+(60 cards in the feed) plus one draft, one unpublished and
+one deleted card, and about 100 swipes of all four actions. No matches are
+created.
+
+Demo accounts, all with the password `adoptajob-demo`:
+
+| Email | Account |
+|-------|---------|
+| `candidate.demo@example.test` | Candidate with a background and a few swipes |
+| `candidate.new@example.test` | Candidate who skipped onboarding: no background, no swipes (cold start, REQ-ML-002) |
+| `recruiter.demo@example.test` | Recruiter of the first company |
+
+Passwords are hashed with scrypt (`scrypt$N$r$p$salt$hash`, in
+`prisma/seed/password.ts`); sign-in must verify the same format.
+
+The code is in `prisma/seed.ts` (database writes) and `prisma/seed/`
+(generator, word lists, password hashing). The generator never touches the
+database, so `tests/seed.test.ts` checks its output, including the database
+rules, without one. The small hand-written dataset with fixed IDs in
+`tests/fixtures/synthetic/mock-data.sql` remains for tests that need exact
+expected results.
 
 ## Schema ownership
 
