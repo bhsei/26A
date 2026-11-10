@@ -1,8 +1,8 @@
 -- AdoptAJob mock data (synthetic, hand-written).
 --
 -- A small dataset with fixed IDs and known relationships for development and
--- tests. It is not the demo seed (INIT_PLAN Commit 09), which will be larger
--- and generated.
+-- tests. It is not the demo seed (SEED-001 in plans/BACKLOG.md), which will be
+-- larger and generated.
 --
 -- WARNING: this script EMPTIES every application table before inserting.
 -- Run it only against a local development database.
@@ -25,10 +25,16 @@
 --     D1 (Mobile Developer); B also liked D3 (Data Analyst) and D4 (Data
 --     Analyst Intern, declined by the recruiter but still a like). D3 and D4
 --     should be recommended to A by the graph, each with 1 similar candidate.
---   * Feed of candidate A (REQ-FUNC-011): D2, D3, D4, D6. D1 is liked, D5 is
---     passed, D7 is a draft.
+--   * Feed of candidate A (REQ-FUNC-011): D3, D4, D6. D1 is liked, D2 is
+--     green-flagged, D5 is passed, D7 is a draft. Any swipe removes a card.
 --   * Candidate A green-flagged D2 (REQ-ML-003); candidate D red-flagged D3
---     (REQ-ML-004).
+--     (REQ-ML-004). Flags are swipe actions, so D2 and D3 are out of those
+--     candidates' feeds.
+--   * Candidate D liked the Company Card D6: a ranking signal only, with no
+--     recruiter decision and no interested-candidates entry (REQ-FUNC-012).
+--   * Invitation codes (REQ-FUNC-025): NIMBUS-MOCK-0001 is unused and valid;
+--     LEDGERLY-MOCK-0001 is already used (its user deleted the account) and
+--     must be rejected.
 --   * Candidate C skipped onboarding and has no swipes: cold start
 --     (REQ-ML-002) with all 6 published cards across 3 sectors.
 --   * Interested candidates for D1 (REQ-FUNC-016): B is pending; A was
@@ -36,8 +42,9 @@
 
 BEGIN;
 
-TRUNCATE users, companies, candidate_profiles, tags, card_tags, candidate_tags,
-  cards, swipes, flags, matches, messages, applications, reports
+TRUNCATE users, companies, invitation_codes, candidate_profiles, tags,
+  card_tags, candidate_tags, cards, swipes, matches, messages, applications,
+  reports
   RESTART IDENTITY CASCADE;
 
 -- Tags ---------------------------------------------------------------------
@@ -74,6 +81,12 @@ INSERT INTO users (id, email, password_hash, role, display_name, company_id, pri
   ('b0000000-0000-0000-0000-000000000001', 'recruiter.nimbus@example.test',   'mock-not-a-real-hash', 'RECRUITER', 'Recruiter B1 (mock)', 'c0000000-0000-0000-0000-000000000001', now(), 'mock-v1', now()),
   ('b0000000-0000-0000-0000-000000000002', 'recruiter.ledgerly@example.test', 'mock-not-a-real-hash', 'RECRUITER', 'Recruiter B2 (mock)', 'c0000000-0000-0000-0000-000000000002', now(), 'mock-v1', now()),
   ('b0000000-0000-0000-0000-000000000003', 'recruiter.careloop@example.test', 'mock-not-a-real-hash', 'RECRUITER', 'Recruiter B3 (mock)', 'c0000000-0000-0000-0000-000000000003', now(), 'mock-v1', now());
+
+-- One valid code, and one already used by a recruiter who has since deleted
+-- their account (used_by_id is null, used_at stays set).
+INSERT INTO invitation_codes (company_id, code, created_by_id, used_by_id, used_at) VALUES
+  ('c0000000-0000-0000-0000-000000000001', 'NIMBUS-MOCK-0001',   'b0000000-0000-0000-0000-000000000001', NULL, NULL),
+  ('c0000000-0000-0000-0000-000000000002', 'LEDGERLY-MOCK-0001', 'b0000000-0000-0000-0000-000000000002', NULL, now() - interval '3 days');
 
 -- Candidates ----------------------------------------------------------------
 
@@ -140,7 +153,7 @@ INSERT INTO card_tags (card_id, tag_id) VALUES
   ('d0000000-0000-0000-0000-000000000006', 12),
   ('d0000000-0000-0000-0000-000000000007', 3), ('d0000000-0000-0000-0000-000000000007', 7), ('d0000000-0000-0000-0000-000000000007', 12);
 
--- Swipes and flags ----------------------------------------------------------
+-- Swipes (likes, passes and flags) ------------------------------------------
 
 INSERT INTO swipes (candidate_id, card_id, action, decision, decided_at) VALUES
   -- A and B both like D1; B also likes D3 (collaborative signal for A).
@@ -149,11 +162,11 @@ INSERT INTO swipes (candidate_id, card_id, action, decision, decided_at) VALUES
   ('a0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000003', 'LIKE', 'PENDING',  NULL),
   ('a0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000004', 'LIKE', 'DECLINED', now() - interval '2 hours'),
   ('a0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000005', 'PASS', NULL,       NULL),
-  ('a0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000005', 'LIKE', 'PENDING',  NULL);
-
-INSERT INTO flags (candidate_id, card_id, kind) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002', 'GREEN'),
-  ('a0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000003', 'RED');
+  ('a0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000005', 'LIKE', 'PENDING',  NULL),
+  -- Like on a Company Card: ranking signal only, no recruiter decision.
+  ('a0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000006', 'LIKE', NULL,       NULL),
+  ('a0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002', 'GREEN_FLAG', NULL, NULL),
+  ('a0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000003', 'RED_FLAG',   NULL, NULL);
 
 -- Match, chat, application and report --------------------------------------
 
