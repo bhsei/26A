@@ -1,93 +1,215 @@
 ---
 title: AdoptAJob PostgreSQL schema (UML class diagram)
 ---
+%% Every table column is listed. PK = primary key, FK = foreign key,
+%% UQ = unique, ? = nullable. Each line is one foreign key, labelled with its
+%% column; filled diamond = ON DELETE CASCADE, hollow diamond or arrow =
+%% ON DELETE SET NULL. Dashed arrows point to the enumeration a column uses.
 classDiagram
   direction TB
-  class User {
-    uuid id
-    string email unique
-    string password_hash
-    Role role
-    string display_name
-    uuid company_id
-    datetime privacy_consent_at
-    string privacy_notice_version
+
+  class users {
+    uuid id PK
+    varchar254 email UQ
+    text password_hash
+    role role
+    varchar100 display_name ?
+    uuid company_id FK ?
+    timestamptz privacy_consent_at
+    varchar20 privacy_notice_version
+    timestamptz created_at
+    timestamptz updated_at
   }
-  class Company {
-    uuid id
-    string name
-    string sector
+  class companies {
+    uuid id PK
+    varchar120 name
+    varchar80 sector
+    timestamptz created_at
+    timestamptz updated_at
   }
-  class CandidateProfile {
-    uuid user_id
-    EducationLevel education_level
-    int years_experience
+  class invitation_codes {
+    uuid id PK
+    uuid company_id FK
+    varchar32 code UQ
+    uuid created_by_id FK ?
+    uuid used_by_id FK ?
+    timestamptz used_at ?
+    timestamptz created_at
   }
-  class Tag {
-    int id
-    TagType type
-    string slug
-    string label
+  class candidate_profiles {
+    uuid user_id PK FK
+    education_level education_level ?
+    smallint years_experience ?
+    timestamptz updated_at
   }
-  class Card {
-    uuid id
-    CardKind kind
-    CardStatus status
-    string title
-    string description
-    string location
-    ContractType contract_type
-    int salary_min
-    int salary_max
-    string_array perks
-    string image_url
-    datetime published_at
+  class tags {
+    int id PK
+    tag_type type
+    varchar60 slug
+    varchar80 label
+    UQ type + slug
   }
-  class Swipe {
-    uuid id
-    SwipeAction action
-    RecruiterDecision decision
-    datetime decided_at
+  class candidate_tags {
+    uuid candidate_id PK FK
+    int tag_id PK FK
   }
-  class Flag {
-    uuid id
-    FlagKind kind
+  class card_tags {
+    uuid card_id PK FK
+    int tag_id PK FK
   }
-  class Match {
-    uuid id
-    datetime created_at
-    datetime ended_at
+  class cards {
+    uuid id PK
+    uuid company_id FK
+    uuid created_by_id FK ?
+    card_kind kind
+    card_status status
+    varchar120 title
+    varchar2000 description
+    varchar120 location ?
+    contract_type contract_type ?
+    int salary_min ?
+    int salary_max ?
+    char3 salary_currency ?
+    text[] perks
+    varchar500 image_url ?
+    timestamptz published_at ?
+    timestamptz created_at
+    timestamptz updated_at
   }
-  class Message {
-    uuid id
-    string body max1000
+  class swipes {
+    uuid id PK
+    uuid candidate_id FK
+    uuid card_id FK
+    swipe_action action
+    recruiter_decision decision ?
+    timestamptz decided_at ?
+    timestamptz created_at
+    UQ candidate_id + card_id
   }
-  class Application {
-    uuid id
-    string message
-    string cv_storage_key
-    int cv_size_bytes
+  class matches {
+    uuid id PK
+    uuid candidate_id FK
+    uuid recruiter_id FK
+    uuid card_id FK
+    timestamptz created_at
+    timestamptz ended_at ?
+    UQ candidate_id + card_id
   }
-  class Report {
-    uuid id
-    ReportTarget target_type
+  class messages {
+    uuid id PK
+    uuid match_id FK
+    uuid sender_id FK
+    varchar1000 body
+    timestamptz created_at
+  }
+  class applications {
+    uuid id PK
+    uuid match_id FK UQ
+    varchar2000 message
+    varchar300 cv_storage_key ?
+    int cv_size_bytes ?
+    timestamptz created_at
+  }
+  class reports {
+    uuid id PK
+    uuid reporter_id FK
+    report_target target_type
     uuid target_id
-    string reason
+    varchar500 reason
+    timestamptz created_at
   }
 
-  Company "1" o-- "0..*" User : recruiters
-  User "1" *-- "0..1" CandidateProfile : candidate background
-  Company "1" *-- "0..*" Card : publishes
-  User "0..1" --> "0..*" Card : created by
-  Card "0..*" -- "1..*" Tag : card_tags
-  CandidateProfile "0..*" -- "0..*" Tag : candidate_tags
-  User "1" *-- "0..*" Swipe : candidate
-  Card "1" *-- "0..*" Swipe
-  User "1" *-- "0..*" Flag : candidate
-  Card "1" *-- "0..*" Flag
-  User "1" *-- "0..*" Match : candidate / recruiter
-  Card "1" *-- "0..*" Match
-  Match "1" *-- "0..*" Message
-  User "1" *-- "0..*" Message : sender
-  Match "1" *-- "0..1" Application
-  User "1" *-- "0..*" Report : reporter
+  class role {
+    <<enumeration>>
+    CANDIDATE
+    RECRUITER
+  }
+  class tag_type {
+    <<enumeration>>
+    SKILL
+    ROLE
+    SECTOR
+    LOCATION
+    CONTRACT
+  }
+  class education_level {
+    <<enumeration>>
+    NONE
+    SECONDARY
+    VOCATIONAL
+    BACHELOR
+    MASTER
+    DOCTORATE
+  }
+  class contract_type {
+    <<enumeration>>
+    FULL_TIME
+    PART_TIME
+    INTERNSHIP
+    TEMPORARY
+    FREELANCE
+  }
+  class card_kind {
+    <<enumeration>>
+    COMPANY
+    JOB
+  }
+  class card_status {
+    <<enumeration>>
+    DRAFT
+    PUBLISHED
+    UNPUBLISHED
+    DELETED
+  }
+  class swipe_action {
+    <<enumeration>>
+    LIKE
+    PASS
+    GREEN_FLAG
+    RED_FLAG
+  }
+  class recruiter_decision {
+    <<enumeration>>
+    PENDING
+    ACCEPTED
+    DECLINED
+  }
+  class report_target {
+    <<enumeration>>
+    CARD
+    USER
+    MESSAGE
+  }
+
+  %% Foreign keys (one line per column)
+  companies "1" o-- "0..*" users : company_id
+  companies "1" *-- "0..*" invitation_codes : company_id
+  users "0..1" <-- "0..*" invitation_codes : created_by_id
+  users "0..1" <-- "0..*" invitation_codes : used_by_id
+  users "1" *-- "0..1" candidate_profiles : user_id
+  candidate_profiles "1" *-- "0..*" candidate_tags : candidate_id
+  tags "1" *-- "0..*" candidate_tags : tag_id
+  companies "1" *-- "0..*" cards : company_id
+  users "0..1" <-- "0..*" cards : created_by_id
+  cards "1" *-- "1..*" card_tags : card_id
+  tags "1" *-- "0..*" card_tags : tag_id
+  users "1" *-- "0..*" swipes : candidate_id
+  cards "1" *-- "0..*" swipes : card_id
+  users "1" *-- "0..*" matches : candidate_id
+  users "1" *-- "0..*" matches : recruiter_id
+  cards "1" *-- "0..*" matches : card_id
+  matches "1" *-- "0..*" messages : match_id
+  users "1" *-- "0..*" messages : sender_id
+  matches "1" *-- "0..1" applications : match_id
+  users "1" *-- "0..*" reports : reporter_id
+
+  %% Enumeration types used by columns
+  users ..> role
+  tags ..> tag_type
+  candidate_profiles ..> education_level
+  cards ..> card_kind
+  cards ..> card_status
+  cards ..> contract_type
+  swipes ..> swipe_action
+  swipes ..> recruiter_decision
+  reports ..> report_target
