@@ -6,17 +6,17 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "db:generate": "prisma generate"
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.0.0",
-    "express": "^4.19.2"
+    "dotenv": "^18.0.10",
+    "express": "^4.19.2",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
-    "prisma": "^5.0.0",
+    "@types/pg": "^8.23.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3"
   }
