@@ -1,10 +1,10 @@
 # Database Design
 ## For AdoptAJob
 
-Version 0.2  
+Version 0.4  
 Prepared by Alba (Qiu Runxiao), database owner  
 Software Engineering course, Team A (repository `bhsei/26A`)  
-2026-11-10
+2026-11-18
 
 ## Table of Contents
 <!-- TOC -->
@@ -25,6 +25,8 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 |------|------|--------------------|---------|
 | Alba (Qiu Runxiao) | 2026-10-16 | First version: PostgreSQL data model and planned Neo4j graph store | 0.1 |
 | Alba (Qiu Runxiao) | 2026-11-10 | Align with SRS v0.8 for the MVP: flags become swipe actions, Company Card likes carry no decision, Job Card fields enforced, invitation codes added, cards soft-deleted, only recruiters belong to a company | 0.2 |
+| Alba (Qiu Runxiao) | 2026-11-11 | Open issues: closed 3 and 6; recorded the decisions on 8 (deleted accounts in matches), 10 (18+ confirmation) and the schema part of 11 (one match per accepting recruiter) | 0.3 |
+| Alba (Qiu Runxiao) | 2026-11-18 | Neo4j graph store aligned with SRS v1.0 (REQ-ML-008): deletion step before every rebuild, rebuild without wiping, count reconciliation, deleted cards and company sector not copied, card kind added | 0.4 |
 
 ## 1. Purpose and Scope
 
@@ -190,8 +192,8 @@ messages, CVs or protected attributes.
 
 ```text
 (:Candidate {id})
-(:Card {id, status, publishedAt})
-(:Company {id, sector})
+(:Card {id, kind, status, publishedAt})
+(:Company {id})
 (:Tag {id, type, slug})
 
 (:Candidate)-[:LIKED|PASSED|GREEN_FLAGGED|RED_FLAGGED {at}]->(:Card)
@@ -205,7 +207,7 @@ Each node label has a uniqueness constraint on `id`.
 | Graph element | PostgreSQL source |
 |---------------|-------------------|
 | `Candidate` | `users` where `role = 'CANDIDATE'` |
-| `Card` | `cards` |
+| `Card` | `cards` where `status <> 'DELETED'` |
 | `Company` | `companies` |
 | `Tag` | `tags` |
 | `LIKED`, `PASSED`, `GREEN_FLAGGED`, `RED_FLAGGED` | `swipes.action` |
@@ -217,11 +219,21 @@ Each node label has a uniqueness constraint on `id`.
 - A harmonization pipeline jointly designed by Alba and Levis reads canonical
   PostgreSQL data with the approved access boundary and writes Neo4j through
   the official driver.
-- Proposed first version: **full rebuild** (clear the graph, then load nodes
-  and relationships in batches with `UNWIND`). The trigger and cadence remain
-  open and must be selected with the matching algorithm.
-- Because the graph is rebuilt, deleted accounts and cards disappear on the next
-  run. The maximum delay must be documented with the script.
+- **Step 1, deletion first:** every run removes the candidates that no longer
+  exist in PostgreSQL, with all their relationships, before any rebuild work
+  and independently of its outcome. A deleted account therefore leaves the
+  graph within 24 hours even when rebuilds fail (SRS REQ-ML-008, Group F F-01,
+  Team E A-04). A failed deletion is logged as an error and retried at the next
+  run.
+- **Step 2, rebuild without wiping:** nodes and relationships are merged in
+  batches with `UNWIND` and stamped with the run id; elements not re-stamped
+  are removed only after a fully successful copy. A failed rebuild is retried up
+  to 3 times and otherwise leaves the previous graph in place.
+- **Step 3, reconciliation:** after each rebuild, node and relationship counts
+  are compared with PostgreSQL; any difference fails the attempt and is logged.
+- Cadence: at least every 15 minutes (SRS REQ-ML-008).
+- Company sector is not copied: no ranking query uses it and it could act as a
+  proxy attribute (SRS REQ-COMP-004).
 - The sync never writes to PostgreSQL.
 
 ### 7.4 Use in ranking
@@ -272,13 +284,13 @@ To change the schema:
 |---|-------|-------|--------|
 | 1 | Update the backlog with the actual database and architecture work already completed. | Jean-Baptiste | Open |
 | 2 | Define the canonical PostgreSQL-to-Neo4j field mapping and deduplication rules. | Alba, Levis | Open |
-| 3 | Select and evaluate the matching algorithm on synthetic graph fixtures. | Nils | Open |
+| 3 | Select and evaluate the matching algorithm on synthetic graph fixtures. | Nils | Closed (2026-11-11): the algorithm was selected in SRS Appendix B issue 2 (weighted tag overlap plus graph co-like score, section 7.4). Evaluation on synthetic fixtures continues under issue 5 and REQ-ML-007. |
 | 4 | Implement the Neo4j pipeline, including freshness, retry, idempotency and deletion checks. | Alba, Levis | Open |
 | 5 | Load synthetic seed data with overlapping candidate likes so graph ranking has patterns to find. | Alba, Nils | In progress: `npm run db:seed` creates shared likes from matching backgrounds; Nils to confirm they are enough for REQ-ML-007. |
-| 6 | Confirm the GDPR retention and deletion policy for both stores. | Team | Open |
+| 6 | Confirm the GDPR retention and deletion policy for both stores. | Team | Closed (2026-11-11): duplicate of SRS Appendix B issue 1, closed by REQ-FUNC-004 (24 h deletion), REQ-COMP-001 (retention periods) and REQ-ML-008. |
 | 7 | Decide how sign-out and account deletion invalidate tokens (REQ-SEC-002); a `users.tokens_valid_after` column is proposed. | Alba, Jean-Baptiste | Open |
-| 8 | Keep matches visible as "Account deleted" for the other party (REQ-FUNC-004): match user columns would become nullable with `ON DELETE SET NULL` instead of cascading. Depends on SRS open issue 11. | Alba, Jean-Baptiste | Open |
+| 8 | Keep matches visible as "Account deleted" for the other party (REQ-FUNC-004). Related: SRS open issues 6 (what remains of a deleted account) and 11 (Iteration 1 criteria). | Alba, Jean-Baptiste | Decided (2026-11-11), migration pending: `matches.candidate_id` and `matches.recruiter_id` become nullable with `ON DELETE SET NULL`; a `CHECK` keeps at least one of them set, and the backend removes a match when both parties are deleted. The app shows "Account deleted" when the other party's column is `NULL`, so no identifier of the deleted user remains. The deleted user's messages still cascade through `messages.sender_id`. Because `applications` hang off the match and would no longer cascade, the deletion transaction removes the deleted candidate's applications and CV files explicitly. Proposed to the team as the answer to SRS issue 6. |
 | 9 | Record inactivity for the 12-month retention rule (REQ-COMP-001), e.g. `users.last_active_at`. | Alba, Jean-Baptiste | Open |
-| 10 | Record the 18+ confirmation given at registration (REQ-FUNC-001), e.g. `users.adult_confirmed_at`. | Alba, Jean-Baptiste | Open |
-| 11 | Allow one match per accepting recruiter (REQ-FUNC-017): `UNIQUE (candidate_id, card_id)` on `matches` should include `recruiter_id`. The SRS must also say how a second recruiter can accept a candidate that REQ-FUNC-016 already removed from the interested list. Iteration 2. | Alba, Jean-Baptiste | Open |
+| 10 | Record the 18+ confirmation given at registration (REQ-FUNC-001). | Alba, Jean-Baptiste | Decided (2026-11-11), migration pending: `users.adult_confirmed_at timestamptz NOT NULL`, set by the backend at registration, following the `privacy_consent_at` pattern. Iteration 1. |
+| 11 | Allow one match per accepting recruiter (REQ-FUNC-017). The SRS must also say how a second recruiter can accept a candidate that REQ-FUNC-016 already removed from the interested list. Iteration 2. | Alba, Jean-Baptiste | Schema decided (2026-11-11), migration pending: `matches` gets `UNIQUE (candidate_id, card_id, recruiter_id)`, and recruiter decisions move from `swipes.decision`/`decided_at` to a new `recruiter_decisions` table (`swipe_id`, `recruiter_id`, `decision`, `decided_at`, `UNIQUE (swipe_id, recruiter_id)`), because one decision per swipe allows only one decision per company. The interested-list rule (REQ-FUNC-016) stays open as a team question in the SRS. |
 | 12 | Store what each user has already seen, so the app can show match and like indicators (REQ-FUNC-018, REQ-FUNC-024). Iteration 2. | Alba, Jean-Baptiste | Open |
