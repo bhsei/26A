@@ -1,10 +1,10 @@
 # Software Requirements Specification
 ## For AdoptAJob
 
-Version 0.8
+Version 1.0
 Prepared by Runxiao Qiu, Nils Förg, Peter Richard Shekidele, Levis Bangoh, Jean-Baptiste Simon
 Software Engineering course, Team A (repository `bhsei/26A`)  
-2026-11-04
+2026-11-18
 
 ## Table of Contents
 <!-- TOC -->
@@ -44,6 +44,7 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Team A | 2026-10-28 | SRS corrections after review of the product: REQ-COMP-003 set to GDPR; REQ-FUNC-004 and REQ-COMP-002 raised to Must; recorded the decisions behind the closed Appendix B issues in REQ-ML-001, REQ-ML-008 and REQ-COMP-001; added minimum age to REQ-FUNC-001; listed password reset, email verification, undo swipe, liked-cards view, moderation tools and blocking as out of scope; clarified REQ-INT-001, 003, 004, REQ-FUNC-001, 003, 004, 009, 011, 014, 017, 019, REQ-PERF-001, REQ-SEC-002, 006, REQ-AVAIL-001, REQ-BUILD-002, REQ-COMP-005, REQ-MAINT-001, REQ-INST-002, REQ-ML-002, 003, 004, 007, 008; aligned shall/should with priorities; updated milestones, apportioning, glossary, references and verification status | 0.6 |
 | Team A | 2026-10-29 | Restructured all requirements to the R1 requirement template: added ID, Title, Rationale, Verification Method and More Information fields; renamed AC to Acceptance Criteria; moved constraint and cross-references from Priority to More Information; updated 1.5 and the introduction of Section 3 | 0.7 |
 | Team A | 2026-11-04 | Corrections from the Group F (bhsei/26A#1) and Team E (bhsei/26A#2) peer reviews of v0.7: REQ-SEC-004 raised to Must (F-07); REQ-COMP-001 privacy notice extended with controller, recipients, profiling and rights procedure (F-05); measurable acceptance criteria for REQ-MAINT-002 (F-08, A-11), REQ-OBS-003, REQ-REL-002 (slow-service case), REQ-FUNC-015, REQ-COMP-005, REQ-PORT-001 and REQ-AVAIL-001 (F-08); corrected REQ-ML-004 exclusion criterion (A-01); added aggregate-limit test to REQ-SEC-006 (A-08); added proxy review to REQ-COMP-004 and scope limits to 3.6.4, REQ-ML-001 and REQ-ML-007 (A-06, A-07); versioned references R5, R6 and R8 (A-10); team decisions: only Job Cards create matches, a like on a Company Card is a ranking signal only, each accepting recruiter gets a separate match and chat, and applications are for the match's Job Card (F-04; glossary, REQ-FUNC-012, 016, 017, 019, 021, 024, REQ-SEC-003, REQ-COMP-001); REQ-FUNC-003 split into company creation and membership (raised to Must) and REQ-FUNC-025 invitation code (Should) (F-03); opened Appendix B issues 5 to 13 for the review findings still to be decided | 0.8 |
+| Team A | 2026-11-18 | Graph store decisions: REQ-ML-008 adds a deletion step that runs before every rebuild attempt, independently of its outcome, with a forced-failure acceptance criterion (Group F F-01, Team E A-04); company sector removed from the graph (REQ-COMP-004 proxy review); deleted cards and card kind specified; closed Appendix B issue 7; R6 updated to database design v0.4 and R7 pointed to its section 7 (A-10) | 1.0 |
 
 ## 1. Introduction
 
@@ -107,8 +108,8 @@ v1.0 is an academic product demonstrated with synthetic data (A2). The complianc
 | R3 | Web Content Accessibility Guidelines (WCAG) 2.1 | W3C | 2018-06-05 | https://www.w3.org/TR/WCAG21/ | Normative (REQ-INT-004) |
 | R4 | OpenAPI Specification 3.x | OpenAPI Initiative | 3.0 or later | https://spec.openapis.org/oas/ | Normative (REQ-INT-005) |
 | R5 | Architecture Design | Team A | v1.0, commit `d941876` (2026-10-18) | `docs/design/Architecture_Design.md` | Informative |
-| R6 | Database Design (PostgreSQL model and Neo4j projection) | Team A | v0.1, commit `d941876` (2026-10-18) | `docs/design/database.md` | Informative |
-| R7 | Neo4j Mapping | Team A | Current <!-- TODO A-10: file not yet in the repository; add it or point to R6 section 7 --> | `docs/design/neo4j-mapping.md` | Informative |
+| R6 | Database Design (PostgreSQL model and Neo4j projection) | Team A | v0.4 (2026-11-18) | `docs/design/database.md` | Informative |
+| R7 | Neo4j Mapping | Team A | Section 7 of R6 | `docs/design/database.md` | Informative |
 | R8 | API contract | Team A | 0.1.0, commit `2aa078c` (2026-10-18) | `docs/design/openapi.yaml` | Informative |
 | R9 | Project plan and Gantt chart | Team A | Current <!-- TODO A-10: plans/ holds only BACKLOG.md and CHANGELOG.md; add the plan/Gantt or update this reference, then record its commit --> | `plans/` | Informative |
 
@@ -1057,12 +1058,12 @@ No change management requirements in v1.0. SRS changes follow the conventions in
 
 - ID: REQ-ML-008
 - Title: Graph data minimisation
-- Statement: The graph store shall be rebuilt from the main database and shall contain only identifiers, tags, card status and publish date, company sector, and like, pass and flag relationships. It shall contain no names, email addresses, password hashes, messages, CVs or attributes listed in REQ-COMP-004, and a deleted account shall be removed from it within the period set by REQ-FUNC-004. The harmonization pipeline shall fully rebuild the graph at least every 15 minutes; a failed rebuild shall be retried up to 3 times and shall leave the previous graph in place; after each rebuild, node and relationship counts shall be compared with PostgreSQL and any difference logged.
-- Rationale: The graph store is a second copy of personal data (C3); minimising it limits exposure, and regular rebuilds with checks keep the ranking fresh and consistent with PostgreSQL.
+- Statement: The graph store shall be rebuilt from the main database and shall contain only identifiers, tags, card kind, status and publish date, and like, pass, green-flag and red-flag relationships; cards with status DELETED shall not be copied. It shall contain no names, email addresses, password hashes, messages, CVs, company sector or attributes listed in REQ-COMP-004. The harmonization pipeline shall fully rebuild the graph at least every 15 minutes; a failed rebuild shall be retried up to 3 times and shall leave the previous graph in place; after each rebuild, node and relationship counts shall be compared with PostgreSQL and any difference logged. Before every rebuild attempt, and independently of its outcome, the pipeline shall remove from the graph every candidate that no longer exists in the main database, together with all of its relationships, so that a deleted account leaves the graph store within the period set by REQ-FUNC-004 even when rebuilds fail; a run in which this deletion fails shall be logged as an error and the deletion retried at the next run.
+- Rationale: The graph store is a second copy of personal data (C3); minimising it limits exposure, and regular rebuilds with checks keep the ranking fresh and consistent with PostgreSQL. Deletion does not depend on a successful rebuild, so the right to erasure (REQ-FUNC-004) holds even when rebuilds keep failing.
 - Priority: Must
-- Acceptance Criteria: Inspection of node and relationship properties finds only the listed fields; after a synthetic account is deleted and the sync runs, no node with its identifier exists; a like recorded in PostgreSQL appears in the graph within 15 minutes; with Neo4j stopped during a rebuild, the previous graph is still readable afterwards; the reconciliation log shows equal counts after a successful rebuild.
+- Acceptance Criteria: Inspection of node and relationship properties finds only the listed fields; after a synthetic account is deleted and the sync runs, no node with its identifier exists; a like recorded in PostgreSQL appears in the graph within 15 minutes; with Neo4j stopped during a rebuild, the previous graph is still readable afterwards; the reconciliation log shows equal counts after a successful rebuild; with every rebuild attempt forced to fail, a candidate deleted in the main database has 0 nodes and 0 relationships in the graph store after the next synchronisation run, and the rest of the previous graph is unchanged.
 - Verification Method: Inspection, Test. Artifact: TC-ML-008 (Section 4).
-- More Information: Constraint C3. R6, R7. Pipeline owners: Runxiao Qiu, Levis. Decisions recorded in Appendix B, issues 1 and 3.
+- More Information: Constraint C3. R6, R7. Pipeline owners: Runxiao Qiu, Levis. Company sector is not copied: no ranking query uses it and it could act as a proxy attribute (REQ-COMP-004). Decisions recorded in Appendix B, issues 1, 3 and 7 (Group F F-01, Team E A-04).
 
 #### 3.6.3 Guardrails
 The feed exclusions are defined in REQ-FUNC-009, REQ-FUNC-011 and REQ-ML-004.
@@ -1162,7 +1163,7 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 | REQ-ML-005 | I | Data folders | In progress | [tests/fixtures/synthetic](../../tests/fixtures/synthetic) |
 | REQ-ML-006 | I | Code review | Planned | |
 | REQ-ML-007 | T | TC-ML-007 | Planned | |
-| REQ-ML-008 | I, T | TC-ML-008 | In progress | [neo4j-mapping.md](../design/neo4j-mapping.md) |
+| REQ-ML-008 | I, T | TC-ML-008 | In progress | [database.md section 7](../design/database.md#7-neo4j-graph-store-planned) |
 
 ## 5. Appendixes
 
@@ -1182,7 +1183,7 @@ Methods: **T** = Test (automated or manual), **A** = Analysis, **I** = Inspectio
 | 4 | Choose the data-protection jurisdiction for REQ-COMP-003. | Team | Closed | GDPR (REQ-COMP-003). |
 | 5 | Define the candidate background fields shown to recruiters in the interested-candidates list, and when a recruiter's access to a candidate's data ends (after a decline, an unmatch or the candidate's account deletion) (Team E A-02). | Team | Open | Affects REQ-SEC-003, REQ-FUNC-016. |
 | 6 | Decide what minimal record, if any, remains of a deleted account so the other party of a match sees "Account deleted", consistently with the removal of the user's identifier within 24 hours (Team E A-03). | Team | Open | Affects REQ-FUNC-004, REQ-FUNC-019. |
-| 7 | Define a graph deletion mechanism (targeted deletion or exclusion at query time) that removes a deleted account from the graph store within 24 hours even when full rebuilds fail, with its retry interval and alert threshold (Group F F-01, Team E A-04). | Runxiao Qiu, Levis | Open | Affects REQ-FUNC-004, REQ-ML-008. |
+| 7 | Define a graph deletion mechanism (targeted deletion or exclusion at query time) that removes a deleted account from the graph store within 24 hours even when full rebuilds fail, with its retry interval and alert threshold (Group F F-01, Team E A-04). | Runxiao Qiu, Levis | Closed | REQ-ML-008: targeted deletion of candidates missing from PostgreSQL before every rebuild attempt, independent of its outcome; runs on every synchronisation run (at most 15 min apart); a failed deletion is logged as an error and retried at the next run; verified with every rebuild forced to fail. |
 | 8 | Define the activity event and timestamp used for the 12-month inactivity rule, the process that runs the cleanup, and any data exempt from it (Team E A-05). | Team | Open | Affects REQ-COMP-001, REQ-FUNC-004. |
 | 9 | Define the categories included in and excluded from the personal-data export, including CVs, reports, flags and the other party's messages (Team E A-09). | Team | Open | Affects REQ-COMP-002, REQ-FUNC-021. |
 | 10 | Decide upload security for card images and CVs: content-based file validation, malware scanning or documented risk acceptance (C2), secure storage, and which users may download each file (Group F F-06). | Team | Open | Affects REQ-FUNC-008, REQ-FUNC-021, REQ-SEC-005. |
