@@ -23,5 +23,50 @@ services:
       retries: 10
       start_period: 10s
 
+  backend:
+    build:
+      context: ./src/backend
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      MATCHING_SERVICE_URL: http://matching:4000
+      MATCHING_TIMEOUT_MS: 1000
+      MATCHING_SERVICE_API_KEY: ${MATCHING_SERVICE_API_KEY:?Set MATCHING_SERVICE_API_KEY in .env}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      matching:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  matching:
+    build:
+      context: ./src/matching-service
+    environment:
+      MATCHING_PORT: 4000
+      MATCHING_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      MATCHING_SERVICE_API_KEY: ${MATCHING_SERVICE_API_KEY:?Set MATCHING_SERVICE_API_KEY in .env}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
 volumes:
   postgres-data:
