@@ -15,14 +15,45 @@ export class NotImplementedApiError extends Error {
   }
 }
 
+export class ApiError extends Error {
+  constructor(
+    readonly statusCode: number,
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export function registerErrorHandler(app: FastifyInstance): void {
+  app.setNotFoundHandler((_request, reply) => {
+    return reply.status(404).send({
+      code: "NOT_FOUND",
+      message: "The requested route was not found",
+    } satisfies ApiErrorBody);
+  });
   app.setErrorHandler((error, request, reply) => {
     request.log.error({ err: error }, "Request failed");
+
+    if (error instanceof ApiError) {
+      return reply.status(error.statusCode).send({
+        code: error.code,
+        message: error.message,
+      } satisfies ApiErrorBody);
+    }
 
     if (error instanceof NotImplementedApiError) {
       return reply.status(error.statusCode).send({
         code: error.code,
         message: error.message,
+      } satisfies ApiErrorBody);
+    }
+    if (typeof error === "object" && error !== null &&
+        "validation" in error && (error as { validation?: unknown }).validation) {
+      return reply.status(400).send({
+        code: "BAD_REQUEST",
+        message: "The request body or parameters are invalid",
       } satisfies ApiErrorBody);
     }
 
