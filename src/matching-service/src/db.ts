@@ -6,5 +6,5 @@ import { Pool } from 'pg';
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 export const db = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.MATCHING_DATABASE_URL ?? process.env.DATABASE_URL,
 });

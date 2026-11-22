@@ -8,6 +8,7 @@ interface DbCard {
   title: string;
   status: string;
   published_at: Date | null;
+  score: number;
   [key: string]: any;
 }
 
@@ -108,9 +109,8 @@ export async function getRecommendedFeed(candidateId: string): Promise<DbCard[]>
     return dateB - dateA;
   });
 
-  return scoredCards.map((sc) => sc.card);
-//   return scoredCards.map((sc) => ({
-//   ...sc.card,
-//   score: sc.score,
-// }));
+  return scoredCards.map((sc) => ({
+    ...sc.card,
+    score: sc.score,
+  }));
 }
