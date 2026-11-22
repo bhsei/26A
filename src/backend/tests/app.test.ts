@@ -39,20 +39,20 @@ describe("backend foundation", () => {
     expect(response.headers["x-request-id"]).toBe("client-request-42");
   });
 
-  it("does not claim unimplemented authentication works", async () => {
+  it("rejects malformed authentication requests", async () => {
     const app = buildApp();
     apps.push(app);
 
     const response = await app.inject({
       method: "POST",
       url: "/auth/login",
-      payload: { email: "candidate@example.test", password: "not-a-password" },
+      payload: {},
     });
 
-    expect(response.statusCode).toBe(501);
+    expect(response.statusCode).toBe(422);
     expect(response.json()).toEqual({
-      code: "NOT_IMPLEMENTED",
-      message: "Login is not implemented yet",
+      code: "VALIDATION_ERROR",
+      message: "Email and password are required",
     });
   });
 });
