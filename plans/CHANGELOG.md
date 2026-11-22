@@ -74,6 +74,17 @@ backend integration, architecture alignment and the planning documents
 
 ## Commit references for `main` and `dev`
 
+### Current branch state at 2026-11-22
+
+- `main` points to the latest Peter documentation commits and is ahead of
+  `dev` on the SAD/API work. `dev` remains at its prior Android/seed/SRS
+  baseline while the V0 integration implementation is in the working tree.
+- No implementation commit is attributed to Claude or another agent-host
+  session. Agent-host session entries are not project deliverables.
+- The 2026-11-22 V0 conformity pass is not yet committed; the pending
+  changes are recorded in this changelog and must be committed in small
+  coherent batches before rebase/merge.
+
 `main` and `dev` currently point to `ed246b4` and are aligned. The branches
 contain the history below.
 contains the database, architecture, SRS and planning work listed below in
@@ -199,6 +210,40 @@ W<N> - API validation; complete OpenAPI lint compliance and security metadata
 W<N> - Backend dependency security; update Fastify and pin the fixed Ajv URI parser
 W<N> - Project tracking; record validation and dependency audit evidence
 ```
+
+## MVP integration implementation
+
+- **Responsible contributor:** Jean-Baptiste SIMON
+- **Status:** Implemented in the working tree; live verification pending
+- **Evidence:** `src/backend/src/`, `src/matching-service/src/`,
+  `docs/design/openapi.yaml`, `docker-compose.yml`,
+  `worklogs/individual/jean-baptiste-simon/jean-baptiste-simon.md`
+- **Change:** Added JWT/scrypt authentication, candidate profile/feed/swipe
+  routes, recruiter card and decision routes, match listing, matching-service
+  ranking delegation with a 1-second timeout, and Compose containers for the
+  backend and matching service. Aligned the OpenAPI contract with the Kotlin
+  mobile routes and corrected the match uniqueness rule to permit one match
+  per accepting recruiter.
+- **Validation:** Backend typecheck/build and 26 Vitest tests pass; matching
+  TypeScript build passes; Prisma schema validation and Redocly lint pass.
+  Docker-based startup could not be run because Docker is unavailable in the
+  current shell.
+
+### SRS/SAD/API V0 conformity pass
+
+- **Responsible contributor:** Jean-Baptiste SIMON
+- **Status:** Implemented in the working tree; not yet committed
+- **Evidence:** `docs/requirements/SRS.md`, `docs/design/SAD.md`,
+  `docs/design/API_CONTRACT.md`, `docs/design/openapi.yaml`,
+  `src/backend/`, `src/matching-service/`, `docker-compose.yml`
+- **Change:** Reconciled registration and consent, 24-hour JWT expiry and
+  logout revocation, lowercase/case-insensitive role input, standard error
+  envelopes, candidate profile DTOs, feed source/scoring, swipe idempotency,
+  recruiter card/match DTOs, internal API-key propagation and dependency
+  readiness. Updated the Prisma consent/revocation/idempotency migration.
+- **Validation:** 26 backend Vitest tests pass, backend typecheck/build pass,
+  matching build passes, Prisma schema validates and `git diff --check` passes.
+  Live Docker, migration, seed and Android flows remain to be executed.
 
 ## Next milestones
 

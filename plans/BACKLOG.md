@@ -104,10 +104,10 @@ slice.
 | BACKEND-002 | Implement `GET /health` and readiness checks | Jean-Baptiste SIMON | BACKEND-001 | Backend health routes and tests | Done |
 | BACKEND-003 | Implement request ID generation and propagation | Jean-Baptiste SIMON | BACKEND-001 | Request-ID hook and tests | Done |
 | BACKEND-004 | Implement the `{code,message}` error contract | Jean-Baptiste SIMON | BACKEND-001, API-001 | Error handler and contract tests | Done |
-| BACKEND-005 | Implement authentication and authorization boundaries | Jean-Baptiste SIMON | BACKEND-002, DB-002 | Auth routes, JWT/session boundary and tests | Planned |
-| BACKEND-006 | Implement recruiter company and card routes | Jean-Baptiste SIMON | BACKEND-005, API-002 | Protected card endpoints and tests | Planned |
-| BACKEND-007 | Implement candidate feed and idempotent swipes | Jean-Baptiste SIMON | BACKEND-005, MATCH-002 | Feed/swipe routes and persistence tests | Planned |
-| BACKEND-008 | Integrate the backend with the matching service | Jean-Baptiste SIMON | BACKEND-007, MATCH-001, API-002 | Internal client, timeout and fallback tests | Planned |
+| BACKEND-005 | Implement authentication and authorization boundaries | Jean-Baptiste SIMON | BACKEND-002, DB-002 | Auth routes, JWT/session boundary and tests | Done |
+| BACKEND-006 | Implement recruiter company and card routes | Jean-Baptiste SIMON | BACKEND-005, API-002 | Protected card endpoints and tests | Done |
+| BACKEND-007 | Implement candidate feed and idempotent swipes | Jean-Baptiste SIMON | BACKEND-005, MATCH-002 | Feed/swipe routes and persistence tests | Done |
+| BACKEND-008 | Integrate the backend with the matching service | Jean-Baptiste SIMON | BACKEND-007, MATCH-001, API-002 | Internal client, timeout and fallback tests | Done |
 | BACKEND-009 | Add backend lint, formatting, coverage and component README | Jean-Baptiste SIMON | BACKEND-001 | Backend quality checks | Done |
 
 ## Matching, graph and data pipeline
@@ -164,3 +164,19 @@ slice.
 - `npm audit --omit=dev` reports zero production vulnerabilities.
 - Backend `typecheck`, tests (3 passing) and build pass after the dependency
   update.
+
+## Recent V0 conformity and integration evidence
+
+- **2026-11-22:** SRS, SAD and API contract cross-read completed for the
+  first usable backend integration. Public roles, consent, JWT expiry,
+  revocation, DTO casing, feed source values, swipe idempotency, recruiter
+  decisions, match cardinality, internal API-key authentication and readiness
+  were reconciled.
+- **Static validation:** Backend typecheck/build and 26 Vitest tests pass;
+  Prisma schema validation and matching-service build pass.
+- **Live verification blocker:** Docker, PostgreSQL and Android end-to-end
+  evidence remain pending. Do not mark POC-001 or full integration Done until
+  the first-run scenario is executed and recorded.
+- **Authoritative next step:** Follow `docs/testing/MANUAL_V0_TEST.md`,
+  capture HTTP/Android evidence, then update this backlog and
+  `plans/CHANGELOG.md` with commit IDs.

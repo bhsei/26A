@@ -74,3 +74,91 @@
   engine policy remains Node.js `22.x`; npm continues to report `EBADENGINE`.
 - **Next action:** Implement `BACKEND-005` authentication after confirming
   the JWT/session choice and Prisma field compatibility with Alba.
+
+## 2026-11-21
+
+### Kotlin, matching and PostgreSQL MVP integration
+
+- **Tasks:** BACKEND-005, BACKEND-006, BACKEND-007, BACKEND-008,
+  API-002 and matching contract alignment
+- **Work:** Replaced the backend 501 authentication and feed boundaries with
+  JWT registration/login/session routes, scrypt password verification,
+  candidate profile persistence, published-card feed ranking, idempotent
+  swipe persistence and recruiter card/interested-candidate/match routes.
+  Aligned the public routes and JSON shapes with Peter's Kotlin client and
+  the OpenAPI 1.0 contract. Updated the matching service to expose
+  `GET /health` and `POST /internal/rank`, preserve the 1-second caller
+  timeout contract and return card IDs with scores. Added backend and
+  matching Dockerfiles and Compose services.
+- **Evidence:** `src/backend/src/routes/`, `src/backend/src/auth.ts`,
+  `src/backend/src/password.ts`, `src/matching-service/src/`,
+  `docs/design/openapi.yaml`, `docker-compose.yml`
+- **Validation:** Backend typecheck and build pass; Vitest reports 26 passing
+  tests; Redocly validates OpenAPI with only the documented localhost
+  server warning; matching TypeScript build passes; Prisma schema validates.
+- **Blocker:** Docker is unavailable in the current shell, so live
+  Compose/PostgreSQL startup and end-to-end HTTP verification are pending.
+  Node 24.20.0 remains outside the project's Node 22 engine policy.
+- **Next action:** Run `docker compose up`, seed the database, verify the
+  Kotlin registration/feed/swipe/recruiter flows and then document measured
+  test evidence and commit IDs.
+
+## 2026-11-22
+
+### V0 contract and implementation conformity pass
+
+- **Tasks:** API-002, BACKEND-002 to BACKEND-008, and database/model
+  conformity review
+- **Work completed:** Reviewed the SRS v1.0, the SAD 1.2, the API contract
+  and the Kotlin client before changing implementation behavior. Reconciled
+  the public API with the Android route family and the newest contract:
+  registration now accepts lowercase or uppercase role input, requires
+  display name and consent, returns `token` plus `user`, uses scrypt password
+  verification, and issues JWT access tokens with at most 24-hour expiry.
+  Added server-side JWT revocation for logout. Aligned candidate profile DTO
+  fields with the Android wrapper and camelCase JSON, including `userId`.
+- **Matching integration:** Changed the backend-to-matcher call to
+  `POST /internal/matching/rank`, propagated `X-Request-Id`, added shared-key
+  authentication, preserved the 1-second timeout and retained recency fallback
+  for unavailable ranking. Added `matchScore` and the contract source values
+  `MATCHING_SERVICE` / `POSTGRESQL_FALLBACK` to feed results.
+- **Transactions and authorization:** Added database-backed idempotency-key
+  storage and replay/conflict behavior for swipes, strengthened published-card
+  and candidate-role checks, and added recruiter match DTO fields. Verified
+  the one-match-per-recruiter/card/candidate cardinality in Prisma and SQL.
+  Updated readiness to query PostgreSQL and probe the matching health endpoint.
+- **API normalization:** Updated Fastify 404 and validation handling to the
+  `{code,message}` contract, corrected consent and credential status codes,
+  and aligned recruiter card and match response serialization with the target
+  contract. Updated the OpenAPI document for readiness, lowercase/case-insensitive
+  roles, 8-character passwords, API-key auth and matching fallback values.
+- **Reproducibility work:** Added consent fields and a revoked-token table to
+  the Prisma model and migration, extended `.env.example` and Docker Compose
+  with the internal matching key, and set demo seed accounts to consented
+  synthetic users.
+- **Estimated preparation:** 2 to 3 hours of contract cross-reading and
+  workstream planning, including the SRS, SAD, API contract, Kotlin routes,
+  Prisma model and matching implementation.
+- **Implementation time:** Several continuous implementation blocks were
+  reconstructed from the 2026-11-21 and 2026-11-22 conversation and the
+  resulting diff. These blocks cover route implementation, DTO corrections,
+  migration/configuration changes, validation and documentation; exact
+  wall-clock durations were not measured and are not represented as measured
+  times. This work is attributable to Jean-Baptiste SIMON.
+- **Validation:** Backend Prisma schema validation passed. Backend
+  typecheck and build passed. Backend Vitest passed 26 tests. Matching-service
+  build passed. `git diff --check` passed. Live Docker, Android, PostgreSQL and
+  matching-service HTTP flows remain pending because Docker/runtime services
+  were not available for a complete end-to-end run.
+- **Evidence:** `docs/requirements/SRS.md`,
+  `docs/design/SAD.md`, `docs/design/API_CONTRACT.md`,
+  `docs/design/openapi.yaml`, `src/backend/src/`,
+  `src/backend/prisma/schema.prisma`,
+  `src/backend/prisma/migrations/20261121180737_match_per_recruiter/migration.sql`,
+  `src/matching-service/src/`, `docker-compose.yml`, `.env.example`.
+- **Blocker:** Run Node 22, Docker Compose, migrations and seed, then execute
+  the manual V0 test guide. The live end-to-end acceptance gate could not be
+  claimed from static checks alone.
+- **Next action:** Commit the implementation in small coherent batches,
+  push `dev`, execute the manual Android/API flow, capture Docker and HTTP
+  evidence, and update this worklog and the planning records with commit IDs.
