@@ -122,6 +122,8 @@ model User {
   companyId           String?  @map("company_id") @db.Uuid
   privacyConsentAt     DateTime @map("privacy_consent_at") @db.Timestamptz(3)
   privacyNoticeVersion String   @map("privacy_notice_version") @db.VarChar(20)
+  ageConfirmed         Boolean  @default(false) @map("age_confirmed")
+  privacyAccepted      Boolean  @default(false) @map("privacy_accepted")
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -302,12 +304,14 @@ model Swipe {
   action      SwipeAction
   decision    RecruiterDecision?
   decidedAt   DateTime?          @map("decided_at") @db.Timestamptz(3)
+  idempotencyKey String?         @map("idempotency_key") @db.VarChar(36)
   createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
 
   candidate User @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   card      Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@unique([candidateId, cardId])
+  @@unique([candidateId, idempotencyKey])
   // Interested-candidates list per card (REQ-FUNC-016).
   @@index([cardId, action, decision])
   @@map("swipes")
@@ -333,7 +337,9 @@ model Match {
   messages    Message[]
   application Application?
 
-  @@unique([candidateId, cardId])
+  // Several recruiters of the company may accept the same candidate for the
+  // same Job Card, producing one match per accepting recruiter.
+  @@unique([candidateId, recruiterId, cardId])
   @@index([recruiterId, createdAt(sort: Desc)])
   @@index([candidateId, createdAt(sort: Desc)])
   @@map("matches")
@@ -370,6 +376,15 @@ model Application {
 
 // targetId points to a card, user or message depending on targetType; it has
 // no foreign key so a report survives the deletion of its target.
+model RevokedToken {
+  jti       String   @id @db.VarChar(36)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime @default(now()) @map("revoked_at") @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("revoked_tokens")
+}
+
 model Report {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   reporterId String       @map("reporter_id") @db.Uuid

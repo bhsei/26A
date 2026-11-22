@@ -100,6 +100,10 @@ async function main() {
   const data = generateSeed({ ...options, now: new Date() });
   for (const user of data.users) {
     user.passwordHash = await hashPassword(DEMO_PASSWORD);
+    user.ageConfirmed = true;
+    user.privacyAccepted = true;
+    user.privacyConsentAt = new Date();
+    user.privacyNoticeVersion = "0.1-draft";
   }
 
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
