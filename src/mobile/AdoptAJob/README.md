@@ -46,11 +46,13 @@ Registration sends `displayName`, `ageConfirmed`, and `privacyAccepted`; recruit
 
 The client uses `token` from the `{ user, token }` authentication response, Bearer authorization, camelCase JSON, and an `Idempotency-Key` on swipe requests.
 
-## Important backend status — No mistaking a client build for live integration
+## Backend integration status
 
-The checked-in backend README currently states that Fastify listens on port **3000**, but authentication, feed persistence and matching integration are still `501 Not Implemented` boundaries. The root `docker-compose.yml` starts PostgreSQL only; it does **not** start Fastify. The backend developer must implement and run the Fastify service separately (for example with `cd src/backend; npm ci; npm run dev` after configuring the root `.env` and database).
-
-The OpenAPI v0.1.0 file in the repository is older/incomplete and conflicts with the separate API proposal sent to Jean-Baptiste. The client has been aligned to that proposal, not to the stale v0.1 file. The proposal itself was explicitly marked provisional until approved and implemented by the backend team. The app therefore cannot honestly be described as 100% contract-verified or production-ready until Jean-Baptiste confirms the authoritative OpenAPI and implements these routes.
+The authoritative contract is `docs/design/openapi.yaml`. The Kotlin client
+targets port 3000 and uses authentication, candidate profile/feed/swipe,
+recruiter card, interested-candidate decision and match routes. Start the
+backend and matching service through the root Docker Compose setup before
+launching the app on the emulator or a physical device.
 
 ## Build and test
 

@@ -5,10 +5,11 @@ It owns the PostgreSQL schema and database migrations. It also exposes the
 integration boundary used to send approved application data and matching
 requests to the Python matching service.
 
-> **Status:** The Fastify application foundation and OpenAPI baseline now
-> exist. Health and readiness are available, while authentication, feed
-> persistence and matching integration remain explicit `501 Not Implemented`
-> boundaries. Do not add credentials, tokens or real personal data.
+> **Status:** The Fastify application foundation, JWT authentication,
+> candidate profile/feed/swipe routes, recruiter card and decision routes,
+> and match listing are implemented. The matching call has a 1-second timeout
+> and falls back to the most-recent feed. Run only with synthetic or approved
+> data; never commit credentials or personal data.
 
 ## Prerequisites
 

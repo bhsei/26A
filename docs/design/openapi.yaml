@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: AdoptAJob Backend API
-  version: 0.1.0
+  version: 1.0.0
   license:
     name: MIT
     url: https://opensource.org/license/mit
@@ -106,7 +106,33 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /candidates/me:
+  /auth/me:
+    get:
+      summary: Restore the current account session
+      tags: [Authentication]
+      operationId: getCurrentUser
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Current authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/logout:
+    post:
+      summary: End the client session
+      tags: [Authentication]
+      operationId: logout
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: Session ended
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /candidate/profile:
     get:
       summary: Retrieve the current candidate profile
       tags: [Candidate]
@@ -143,7 +169,7 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /candidates/me/feed:
+  /candidate/feed:
     get:
       summary: Retrieve the candidate job feed
       tags: [Candidate]
@@ -164,7 +190,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /candidates/me/swipes:
+  /candidate/swipes:
     post:
       summary: Record a candidate swipe
       tags: [Candidate]
@@ -196,7 +222,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /recruiters/me/cards:
+  /recruiter/cards:
     get:
       summary: List recruiter job cards
       tags: [Recruiter]
@@ -208,9 +234,69 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/JobCard"
+                $ref: "#/components/schemas/JobCardsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /recruiter/interested:
+    get:
+      summary: List interested candidates for the recruiter company
+      tags: [Recruiter]
+      operationId: listInterestedCandidates
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Interested Job Card swipes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterestedResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /recruiter/interested/{swipeId}/decision:
+    post:
+      summary: Accept or decline an interested candidate
+      tags: [Recruiter]
+      operationId: decideInterestedCandidate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: swipeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionRequest"
+      responses:
+        "200":
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /matches:
+    get:
+      summary: List matches for the current account
+      tags: [Candidate]
+      operationId: listMatches
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Active matches
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
@@ -230,7 +316,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/JobCard"
+                $ref: "#/components/schemas/JobCardResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -277,8 +363,7 @@ components:
       required: true
       schema:
         type: string
-        minLength: 1
-        maxLength: 128
+        format: uuid
     Limit:
       name: limit
       in: query
@@ -307,6 +392,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     ServiceUnavailable:
       description: A required service is unavailable
       content:
@@ -319,9 +410,9 @@ components:
       scheme: bearer
       bearerFormat: JWT
     internalServiceAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: service-token
+      type: apiKey
+      in: header
+      name: X-API-Key
   schemas:
     ErrorResponse:
       type: object
@@ -343,7 +434,7 @@ components:
           example: backend
     ReadinessResponse:
       type: object
-      required: [status, database]
+      required: [status, database, matchingService]
       properties:
         status:
           type: string
@@ -351,20 +442,36 @@ components:
         database:
           type: string
           enum: [up]
+        matchingService:
+          type: string
+          enum: [up]
     RegisterRequest:
       type: object
-      required: [email, password, role]
+      required: [email, password, role, displayName, ageConfirmed, privacyAccepted]
       properties:
         email:
           type: string
           format: email
         password:
           type: string
-          minLength: 12
+          minLength: 8
           writeOnly: true
         role:
           type: string
-          enum: [CANDIDATE, RECRUITER]
+          enum: [candidate, recruiter, CANDIDATE, RECRUITER]
+        displayName:
+          type: string
+          maxLength: 100
+        ageConfirmed:
+          type: boolean
+        privacyAccepted:
+          type: boolean
+        companyName:
+          type: string
+          maxLength: 120
+        companySector:
+          type: string
+          maxLength: 80
     LoginRequest:
       type: object
       required: [email, password]
@@ -377,9 +484,9 @@ components:
           writeOnly: true
     AuthResponse:
       type: object
-      required: [accessToken, user]
+      required: [token, user]
       properties:
-        accessToken:
+        token:
           type: string
         user:
           $ref: "#/components/schemas/UserSummary"
@@ -396,40 +503,78 @@ components:
         role:
           type: string
           enum: [CANDIDATE, RECRUITER]
+        displayName:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+        companySector:
+          type: string
+          nullable: true
+    MeResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserSummary"
     CandidateProfileInput:
       type: object
       properties:
-        background:
+        displayName:
           type: string
-          maxLength: 4000
+          maxLength: 100
+        desiredRoles:
+          type: string
+          maxLength: 1000
+        skills:
+          type: array
+          items:
+            type: string
         educationLevel:
           type: string
-          enum: [NONE, SECONDARY, VOCATIONAL, BACHELOR, MASTER, DOCTORATE]
-        yearsExperience:
-          type: integer
-          minimum: 0
+        experienceYears:
+          type: string
+        preferredLocations:
+          type: string
+        contractType:
+          type: string
     CandidateProfile:
-      allOf:
-        - $ref: "#/components/schemas/CandidateProfileInput"
-        - type: object
-          required: [userId]
-          properties:
-            userId:
-              type: string
-              format: uuid
+      type: object
+      required: [profile]
+      properties:
+        profile:
+          allOf:
+            - type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+            - $ref: "#/components/schemas/CandidateProfileInput"
     JobCardInput:
       type: object
-      required: [title, description, contractType]
+      required: [title, description]
       properties:
+        kind:
+          type: string
+          enum: [COMPANY, JOB]
         title:
           type: string
           maxLength: 200
         description:
           type: string
           maxLength: 10000
+        location:
+          type: string
+          maxLength: 120
         contractType:
           type: string
           enum: [FULL_TIME, PART_TIME, INTERNSHIP, TEMPORARY, FREELANCE]
+        tags:
+          type: array
+          items:
+            type: string
     JobCard:
       allOf:
         - $ref: "#/components/schemas/JobCardInput"
@@ -441,12 +586,38 @@ components:
               format: uuid
             status:
               type: string
-              enum: [DRAFT, PUBLISHED, UNPUBLISHED]
+              enum: [DRAFT, PUBLISHED, UNPUBLISHED, DELETED]
+            matchScore:
+              type: integer
+              nullable: true
+            companyName:
+              type: string
+            sector:
+              type: string
+            published:
+              type: boolean
+            createdAt:
+              type: string
+              format: date-time
+    JobCardsResponse:
+      type: object
+      required: [cards]
+      properties:
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/JobCard"
+    JobCardResponse:
+      type: object
+      required: [card]
+      properties:
+        card:
+          $ref: "#/components/schemas/JobCard"
     FeedResponse:
       type: object
-      required: [items, nextCursor, source]
+      required: [cards, nextCursor, source]
       properties:
-        items:
+        cards:
           type: array
           items:
             $ref: "#/components/schemas/JobCard"
@@ -455,7 +626,7 @@ components:
           nullable: true
         source:
           type: string
-          enum: [matching, most-recent]
+          enum: [MATCHING_SERVICE, POSTGRESQL_FALLBACK]
     SwipeRequest:
       type: object
       required: [cardId, action]
@@ -465,7 +636,7 @@ components:
           format: uuid
         action:
           type: string
-          enum: [LIKE, PASS]
+          enum: [LIKE, PASS, GREEN_FLAG, RED_FLAG]
     SwipeResponse:
       type: object
       required: [cardId, action, recorded]
@@ -475,7 +646,7 @@ components:
           format: uuid
         action:
           type: string
-          enum: [LIKE, PASS]
+          enum: [LIKE, PASS, GREEN_FLAG, RED_FLAG]
         recorded:
           type: boolean
     RankingRequest:
@@ -506,3 +677,74 @@ components:
               score:
                 type: number
                 format: float
+    InterestedSwipe:
+      type: object
+      required: [id, candidateDisplayName, candidateSkills, cardId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidateDisplayName:
+          type: string
+        candidateSkills:
+          type: array
+          items:
+            type: string
+        cardId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    InterestedResponse:
+      type: object
+      required: [swipes]
+      properties:
+        swipes:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterestedSwipe"
+    DecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [ACCEPT, DECLINE]
+    DecisionResponse:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [ACCEPT, DECLINE]
+    MatchRecord:
+      type: object
+      required: [id, cardId, createdAt, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidateEmail:
+          type: string
+          nullable: true
+        recruiterEmail:
+          type: string
+          nullable: true
+        cardId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ACTIVE]
+    MatchesResponse:
+      type: object
+      required: [matches]
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchRecord"
