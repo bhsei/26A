@@ -7,7 +7,7 @@
 
 | DOCUMENT NUMBER | RELEASE/REVISION | RELEASE/REVISION DATE |
 |---|---|---|
-| 26A-SAD-001 | 1.2 · Unified submission | 22 November 2026 |
+| 26A-SAD-001 | 1.3 · Current-main reconciliation | 24 November 2026 |
 | 26A-SRS | 1.0 · Requirements | 18 November 2026 |
 | 26A-OPENAPI | 0.1.0 · Contract baseline | 05 November 2026 |
 | 26A-DATA | 0.4 · Database design | 18 November 2026 |
@@ -20,7 +20,7 @@ AdoptAJob is Team 26A’s Android-first job discovery and recruitment proof of c
 
 ### Document baseline
 
-Issue date: 22 November 2026. Scope: the local academic proof of concept at `main` commit `8c9e2e7`. The cover register lists the SAD release and the versions of its principal inputs, not six releases of this SAD. [R1]
+Issue date: 24 November 2026. Scope: the current `main` branch, reconciled with the backend README, `docs/design/API_CONTRACT.md`, and the implemented Android client. The prior reviewed snapshot was `8c9e2e7`; this revision supersedes it as the architecture baseline. [R1] [R35]
 
 ### How to read implementation status
 
@@ -81,18 +81,19 @@ For the fastest route through the document:
 
 The SAD is controlled against one Git revision. Cover rows identify the versions of its major inputs.
 
-- **Revision Number:** 1.2, document 26A-SAD-001.
-- **Revision Release Date:** 22 November 2026.
-- **Purpose of Revision:** Consolidate the SAD at the reviewed commit and reconcile the architecture narrative with the source tree. [R1] [R5]
-- **Scope of Revision:** All template views, an integration issue register, graph and recruiter decision sequences, a side-by-side API crosswalk, downstream requirements traceability and acceptance gates. Team approval is separate from document completion.
+- **Revision Number:** 1.3, document 26A-SAD-001.
+- **Revision Release Date:** 24 November 2026.
+- **Purpose of Revision:** Reconcile the SAD with Jean-Baptiste’s current backend implementation, the authoritative frontend-to-backend API contract, matching-service integration, current synthetic seed behavior, and the current repository state. [R1] [R35]
+- **Scope of Revision:** Backend implementation status, authentication and feed behavior, matching-service integration, seed data, API-contract traceability, sequence diagrams, deployment status, references, and acceptance evidence.
+- **Prior baseline:** Commit `8c9e2e7` remains available in Git history as the prior reviewed snapshot. It is no longer the current architecture baseline.
 
 ## 1.2 Purpose and Scope of the SAD
 
-This SAD specifies AdoptAJob’s local proof-of-concept architecture: native Android, the public Fastify API boundary, the Express ranker, the PostgreSQL schema and the planned Neo4j projection. It records both checked-in behavior and intended interactions explicitly. [R1] [R2]
+This SAD specifies AdoptAJob’s local proof-of-concept architecture: the native Android Kotlin + Jetpack Compose client, the public Fastify API gateway, PostgreSQL 16 as the transactional source of truth, the TypeScript Express matching service, and the planned Neo4j graph projection. The Fastify gateway implements JWT authentication, candidate profile/feed/swipe routes, recruiter card and decision routes, and match listing. It calls the matching service with a one-second timeout and falls back to the most recent eligible feed when the matching service is unavailable. [R1] [R2] [R35]
 
 Architectural scope includes deployable units, cross-module contracts, data authority, privacy and authorization boundaries, behavior visible across interfaces, and quality targets with architectural consequences.
 
-Detailed UI styling, individual SQL statements, dependency internals and test implementation are maintained in source. The normative product behavior remains in SRS v1.0; the older OpenAPI and the mobile proposal are evidence of a split contract, not interchangeable specifications. [R2] [R3] [R8]
+Detailed UI styling, individual SQL statements, dependency internals and test implementation are maintained in source. The normative product behavior remains in SRS v1.0. `docs/design/API_CONTRACT.md` is the authoritative frontend-to-backend integration contract. OpenAPI v0.1.0 remains a historical contract baseline. [R2] [R3] [R8] [R35] [R36]
 
 The document excludes production hosting, payments, a web client, external job boards, video interviews and external push notifications. The baseline is synthetic-data-only, and no real-person processing or GDPR compliance is certified here. [R2] [R13]
 
@@ -349,7 +350,7 @@ Most important risks are contract drift, lack of server authorization, an incomp
 
 **October:** The initialization README and architecture draft set out Expo and Python/FastAPI; Jean-Baptiste then checked in OpenAPI and the Fastify foundation. The 5 November OpenAPI revision added lint and security metadata, not implementation parity. [R5] [R9] [R13] [R29]
 
-**November:** Alba added the MVP PostgreSQL migration and synthetic seed, then SRS v1.0 and the graph deletion-first design. Nils added deterministic Express ranking on 10 November and revised it for PostgreSQL on 17 November. Peter added native Android on 20 November and documented its API address in the snapshot’s final commit. [R1] [R10] [R22] [R23] [R24]
+**November:** Alba added the MVP PostgreSQL migration and synthetic seed, then SRS v1.0 and the graph deletion-first design. Nils added deterministic Express ranking on 10 November and revised it for PostgreSQL on 17 November. Peter added native Android on 20 November. Jean-Baptiste subsequently implemented the Fastify application foundation, JWT authentication, candidate profile/feed/swipe routes, recruiter card and decision routes, match listing, matching-service integration with a one-second timeout, and most-recent-feed fallback. [R1] [R10] [R22] [R23] [R24] [R35]
 
 ## 2.3 Product Line Reuse Considerations
 
@@ -434,7 +435,7 @@ The catalog uses checked-in files and public behavior to identify responsibility
 
 **Android — Peter:** `src/mobile/AdoptAJob/app`. `MainActivity` creates `ApiClient` and `SessionStore`, then mounts `AdoptAJobApp` under Material 3. Compose screens are `AuthScreen`, `CandidateFeed`, `CandidateProfileScreen`, `MatchesScreen` and `RecruiterScreen`. `ApiModels.kt` defines DTOs; `ContractTests.kt` tests local JSON serialization. [R6] [R7] [R18]
 
-**Backend — Jean-Baptiste:** `src/backend/src`. `server.ts` loads host/port and starts `app.ts`. `app.ts` registers health, auth and feed routes and the request-ID and error hooks. Alba owns relational modeling and migrations in `src/backend/prisma`; seed modules generate and load synthetic records. [R9] [R10] [R14] [R26]
+**Backend — Jean-Baptiste:** `src/backend/src`. The Fastify application implements JWT authentication, candidate profile/feed/swipe routes, recruiter card and decision routes, match listing, health, readiness, request-ID correlation, and error handling. It integrates with the matching service using a one-second timeout and falls back to the most recent eligible feed when the matching service is unavailable. Alba owns relational modeling and migrations in `src/backend/prisma`; seed modules generate and load synthetic records. [R9] [R10] [R14] [R26] [R35]
 
 **Matching — Nils:** `src/matching-service/src`. `index.ts` exposes an Express endpoint and delegates to `matching_service.ts`; `db.ts` creates a `pg` Pool. Graph schema implementation is Levis’s assignment; Alba and Levis own harmonization/deduplication design with Nils responsible for matching integration and target pipeline execution. [R4] [R11] [R14]
 
@@ -536,19 +537,19 @@ The runtime catalog identifies the owner, provides exact externally visible inte
 
 ###### 3.2.5.1.2.2 Relations
 
-Android supplies Bearer tokens on protected-intent requests. The Express ranker currently queries PostgreSQL directly using parameterized values. Backend-to-Express request forwarding, private service authentication, graph reads and projection writes are target links, not facts about `main`. [R2] [R3] [R7] [R9] [R11]
+Android supplies Bearer tokens on protected-intent requests. The Fastify gateway forwards approved matching requests to the matching service with a one-second timeout and falls back to the most recent eligible feed when the matching service is unavailable. The matching service reads canonical PostgreSQL data. Graph reads and projection writes remain target links unless the current harmonization pipeline is implemented and verified. [R2] [R7] [R9] [R11] [R35]
 
 ###### 3.2.5.1.2.3 Interfaces
 
 Fastify exposes `GET /health` and `GET /ready` (both static 200 responses, not dependency probes); `POST /auth/register`, `POST /auth/login`, `GET /candidates/me/feed` and `POST /candidates/me/swipes` exist as 501 stubs. No other product endpoint is registered by the reviewed source. [R9]
 
-Express implements `GET /feed/:candidateId` and returns `200 {success:true,count,data}` with ordered PostgreSQL card rows or `500 {success:false,message}` on failure. OpenAPI proposes `POST /internal/matching/rank` with `candidateId`/optional `limit`, service authentication, and ordered `{cardId,score}` items. There is no route alias or adapter between them. [R3] [R11]
+The gateway-to-matching-service boundary is the internal ranking interface. The Fastify gateway sends an approved matching request with a one-second timeout; the matching service returns ranked results used to construct the candidate feed. If the matching service is unavailable or exceeds its timeout, the gateway falls back to the most recent eligible feed. The exact internal route, authentication header, request schema, response schema, and score semantics are defined in `docs/design/API_CONTRACT.md` and must be verified against the current matching-service implementation. [R11] [R35]
 
 The Fastify hook echoes a supplied `X-Request-ID` (truncated to 128 characters) or generates a UUID. Android’s swipe UUID is an `Idempotency-Key`, not a request ID. Cross-service ID propagation belongs to the future adapter. [R6] [R7] [R9] [R11]
 
 ###### 3.2.5.1.2.4 Behavior
 
-**Registration and login.** The Android form blocks absent 18+ confirmation or notice acceptance, absent display name or incomplete recruiter company data. It submits lower-case role and consent fields for registration; login submits email/password. Current Fastify returns 501 for both. On a successful compatible server, Android saves token then calls `GET /auth/me`; a failed validation clears it. `POST /auth/logout` is best effort on Android and absent on `main`. [R6] [R7] [R8] [R9]
+**Registration, consent and login.** The Android form blocks absent 18+ confirmation or notice acceptance, absent display name or incomplete recruiter company data. It submits lower-case role and consent fields for registration; login submits email/password. The backend implements JWT authentication and the candidate/recruiter product routes. On successful authentication, Android saves the token and calls the session route; a failed session check clears the local token. Sign-out clears local state even if the logout call fails; server-side revocation remains a backend responsibility. [R6] [R7] [R8] [R9] [R35]
 
 ### Figure 5: Registration, consent and login: Android calls versus Fastify results
 
@@ -574,9 +575,9 @@ sequenceDiagram
     Note over A,F: Target: 200 user; invalid token clears local session
 ```
 
-**Candidate feed.** Android calls `GET /candidate/feed` and expects `{cards}`; Fastify does not serve that path, and `GET /candidates/me/feed` is a separate 501 stub. Independently, Express filters to `PUBLISHED` cards with a publication date and excludes any previous swipe for the candidate. It adds 3 per matched `SKILL` tag, 2 per `ROLE` and 1 for `SECTOR`, `LOCATION` or `CONTRACT` (including default 1 for an unknown type), then sorts by descending score and publication time; exact ties have no explicit third key. Scores are not returned.
+**Candidate feed.** The Android client requests its candidate feed. The Fastify gateway validates the JWT and candidate role, requests ranking from the matching service with a one-second timeout, hydrates authorized card records from PostgreSQL, and returns the feed. If the matching service is unavailable or exceeds its timeout, the gateway falls back to the most recent eligible feed. The authoritative feed request, response, pagination, score, and fallback contract are defined in `docs/design/API_CONTRACT.md`. [R6] [R9] [R11] [R35]
 
-No tag means recency, not the SRS’s sector-diverse cold start. Liked/flagged cards are not used as scoring evidence beyond prior-swipe exclusion. [R2] [R3] [R6] [R9] [R11]
+The standalone ranker’s tag-weighting behavior remains implementation evidence for ranking logic, but it is not the public client contract. Liked/flagged cards are not used as scoring evidence beyond prior-swipe exclusion.
 
 ### Figure 6: Candidate feed: Android, Fastify and standalone ranking
 
@@ -598,7 +599,7 @@ sequenceDiagram
     F-->>A: 200 { cards, nextCursor, source }
 ```
 
-**Swipe to match.** The Android app sends `{cardId,action}` with `LIKE` or `PASS` and a new UUID `Idempotency-Key` for each invocation. It removes the card only on a successful response. The recruiter client fetches `/recruiter/interested` and posts `ACCEPT` or `DECLINE`; on success it removes that row locally. Candidate Matches requests `GET /matches`. Those proposal routes are absent from Fastify. The next sequence illustrates the target, not a replay of successful requests. [R6] [R7] [R8] [R9]
+**Swipe to match.** The Android app sends the candidate swipe request with `cardId`, `action`, and an `Idempotency-Key` HTTP header. It removes the card only after a successful response. The recruiter uses the Android recruiter workspace to retrieve interested candidates and submit `ACCEPT` or `DECLINE`; on success it removes that row locally. The candidate Matches screen requests the match list. The authoritative route paths and payload contracts are defined in `docs/design/API_CONTRACT.md`; implementation parity must be verified against the current gateway handlers. [R6] [R7] [R8] [R9] [R35]
 
 ### Figure 7: Candidate swipe, recruiter accept or decline, and match: target sequence
 
@@ -632,7 +633,7 @@ sequenceDiagram
     F-->>A: 200 { matches }
 ```
 
-Only candidates swipe. In the target, a Company Card like is ranking-only; `PASS` and flags never create a match; `DECLINE` removes the candidate from the applicable interested list without notifying them or creating a match. Validate candidate, card kind, company membership and recruiter identity server-side; accept a Job Card like and persist the decision and that recruiter’s match atomically. The SRS permits distinct matches for distinct accepting recruiters, which the committed schema artifacts do not yet support. [R2] [R4] [R10]
+Only candidates swipe. A Company Card like is ranking-only; `PASS` and flags never create a match; `DECLINE` removes the candidate from the applicable interested list without notifying them or creating a match. The gateway validates candidate identity, card kind, company membership, and recruiter identity server-side. A recruiter `ACCEPT` of an eligible Job Card like persists the decision and that recruiter’s match atomically. The SRS permits distinct matches for distinct accepting recruiters; the current schema and interested-list behavior must be verified against the committed migrations before claiming that requirement is satisfied. [R2] [R4] [R10] [R35]
 
 ###### 3.2.5.1.2.5 Constraints
 
@@ -740,9 +741,9 @@ Emulator default: `http://10.0.2.2:3000/`. A physical device builds with `-PAPI_
 
 ###### 3.3.5.1.2.4 Behavior
 
-From repository root, use `docker compose up -d postgres` and inspect container health. From `src/backend`, run `npm ci`, `npm run db:deploy`, `npm run db:generate`, then `npm run dev`; `npm run db:seed` is optional and destructive, so use only a throwaway synthetic local database. In `src/matching-service`, run `npm ci` and `npm run dev` to start a standalone process; use only an approved PostgreSQL read account. In the Android project, use `./gradlew test` and `./gradlew assembleDebug` with the Android SDK and a supported JDK. [R11] [R12] [R25] [R26] [R32]
+From the repository root, run `docker compose up -d postgres` and inspect container health. From `src/backend`, run `npm ci`, `npm run db:deploy`, `npm run db:generate`, optionally `npm run db:seed`, then `npm run dev`. The seed is destructive and refuses to run unless `DATABASE_URL` points to localhost. Start the matching service from its component directory using its documented development command. In the Android project, run `./gradlew test` and `./gradlew assembleDebug` with the Android SDK and a supported JDK. [R11] [R12] [R24] [R25] [R26] [R32] [R35]
 
-`GET /health` and `GET /ready` can demonstrate Fastify reachability, not database readiness. Express has no health route. Container `pg_isready` provides an independent database-level signal. To meet `REQ-OBS-003`, probe actual dependencies, test 503 on database failure and record demo start/end checks. [R2] [R9] [R11] [R12]
+`GET /health` and `GET /ready` demonstrate gateway reachability and readiness. The backend README instructs operators to check both before using application routes. Container `pg_isready` provides an independent database-level signal. To meet `REQ-OBS-003`, verify that readiness probes actual dependencies, test 503 on dependency failure, and record demo start/end checks. [R2] [R9] [R11] [R12] [R24] [R35]
 
 Use the existing package checks and historical lint evidence as a starting point. Add a committed GitHub workflow for locked installs, lint, build and tests on `dev`/`main` pushes and pull requests, and collect separate backend and matching 60% line-coverage reports. Current package scripts do not establish that lint, formatting or coverage gates run. [R2] [R14] [R19] [R27] [R32]
 
@@ -805,50 +806,22 @@ SRS graph augmentation is optional for serving a feed; minimum data and erasure 
 
 Figure 11 groups related physical entities; arrows summarize associations rather than replacing foreign-key cardinalities. The derived graph is dashed because it is design-only. See the committed UML for full columns and relationships. [R28]
 
-### Figure 11: Canonical relational model and derived graph projection
+### Figure 11: Conceptual data overview and derived graph projection
+
+> **Figure status:** conceptual overview. The committed Prisma schema, migration SQL, and `docs/design/database-uml.mmd` are authoritative for physical tables, columns, keys, constraints, and cardinalities. This figure must not be read as a foreign-key diagram.
 
 ```mermaid
-erDiagram
-    USER ||--o{ CANDIDATE_PROFILE : has
-    USER ||--o{ MEMBERSHIP : belongs_to
-    COMPANY ||--o{ MEMBERSHIP : has
-    COMPANY ||--o{ CARD : publishes
-    CARD ||--o{ CARD_TAG : has
-    TAG ||--o{ CARD_TAG : classifies
-    USER ||--o{ SWIPE : makes
-    CARD ||--o{ SWIPE : receives
-    SWIPE ||--o| MATCH : may_create
-    USER ||--o{ MATCH : participates
-
-    USER {
-        string id
-        string email
-        string role
-        string passwordHash
-        datetime privacyConsentAt
-        string privacyNoticeVersion
-    }
-    COMPANY {
-        string id
-        string name
-        string sector
-    }
-    CARD {
-        string id
-        string kind
-        string status
-        datetime publishedAt
-    }
-    SWIPE {
-        string id
-        string action
-        datetime createdAt
-    }
-    MATCH {
-        string id
-        string status
-        datetime createdAt
-    }
+flowchart LR
+    U[User] --> CP[Candidate Profile]
+    U --> C[Company membership]
+    C --> CARD[Card]
+    U --> S[Swipe]
+    CARD --> S
+    S -. eligible Job Card like .-> M[Match]
+    U -. candidate participant .-> M
+    U -. recruiter participant .-> M
+    CARD -. concerned card .-> M
+    P[(PostgreSQL canonical data)] -. deletion-first projection .-> N[(Neo4j derived graph)]
 ```
 
 ##### 3.4.5.1.2 Element Catalog
@@ -873,7 +846,7 @@ Use Prisma for schema evolution and application writes. Matching’s `pg` pool c
 
 ###### 3.4.5.1.2.4 Behavior
 
-**Consent and membership target:** validate policy and age affirmation at registration; set server-side privacy timestamp and notice version; hash passwords; bind recruiters to an authorized company. The scrypt generator is used by the synthetic seed only. The `adult_confirmed_at` field, token invalidation strategy and inactivity timestamp are not in the committed schema. [R2] [R4] [R9] [R10] [R26]
+**Consent and membership:** validate policy and age affirmation at registration; set server-side privacy timestamp and notice version; hash passwords; bind recruiters to an authorized company. The backend uses scrypt password hashing in the format `scrypt$N$r$p$salt$hash`. The seed generator does not write directly to the database; `prisma/seed.ts` performs database writes. Token invalidation, inactivity tracking, and any remaining consent-schema fields must be verified against the current migration and authentication implementation. [R2] [R4] [R9] [R10] [R24] [R26] [R35]
 
 **Swipes and decisions:** unique candidate/card prevents duplicate rows, but API replay semantics do not exist. Migration target for SRS per-recruiter acceptance is unique candidate/card/recruiter and a recruiter_decisions record unique per swipe/recruiter. The interested-list contract for a second recruiter after the first decision remains open. No such migration is committed. [R2] [R4] [R9] [R10]
 
@@ -920,7 +893,7 @@ flowchart LR
     B[Fastify + Prisma] -- owns writes --> P[(PostgreSQL canonical data)]
     E[Express ranker] -- authorized reads --> P
     H[Harmonization job] -- deletion-first projection --> N[(Neo4j derived graph)]
-    E -. optional graph signals .-> N
+    E -. target least-privilege access and optional graph signals .-> N
     N -. no write-back .-> P
 ```
 
@@ -944,11 +917,11 @@ The four views share architectural names but represent different concerns. An im
 
 **Contract gap:** Android implements singular candidate/recruiter paths, lowercase roles and `token`; OpenAPI uses plural self-scoped paths, uppercase roles and `accessToken`. DTO, status, pagination, consent and endpoint mismatches are listed in Appendix A.1. GitHub validation of a file is not compatibility evidence. [R3] [R7] [R8] [R29]
 
-**Runtime gap:** Fastify has no matching adapter or protected product handlers; Express reads PostgreSQL directly. Fastify’s request-ID hook echoes the header, but the framework’s default logger binding can still show `req-1` in an injected request. Express logs to console and does not forward or correlate this ID. Treat end-to-end traceability as unverified. [R9] [R11] [R17]
+**Runtime status:** The Fastify gateway implements protected product routes and calls the matching service with a one-second timeout and most-recent-feed fallback. The matching service reads canonical PostgreSQL data. End-to-end request tracing, error-envelope normalization, dependency readiness, and cross-service log correlation remain verification items until demonstrated by integrated tests and logs. [R9] [R11] [R17] [R35]
 
 **Data gap:** The current schema has one decision on the swipe and one match per candidate/card, but SRS requires one match per accepting recruiter. Schema and interested-list behavior must align before a two-recruiter acceptance test can pass. Account deletion cascades matches today; the target keeps an anonymized “Account deleted” entry for the other party. [R2] [R4] [R10]
 
-**Deployment gap:** Compose defines PostgreSQL only, and the GitHub repository shows no configured Actions workflows at review. The intended Neo4j and sync process are absent. Documentation and local checks do not substitute for operational or end-to-end evidence. [R12] [R19]
+**Deployment status:** Docker Compose provides the local PostgreSQL service. The Fastify gateway and matching service run as separate development processes. Neo4j synchronization and full-stack orchestration remain target work. Documentation and local checks do not substitute for operational or end-to-end evidence. [R12] [R19] [R24] [R35]
 
 ## 4.2 View-to-View Relations
 
@@ -972,7 +945,9 @@ The four views share architectural names but represent different concerns. An im
 
 | Reference | Material |
 |---|---|
-| R1 | Repository snapshot and branches: https://github.com/bhsei/26A/commit/8c9e2e73a624f6419d1aad1275f3effd81dfde0a |
+| R1 | Prior repository snapshot: https://github.com/bhsei/26A/commit/8c9e2e73a624f6419d1aad1275f3effd81dfde0a |
+| R35 | Backend README and current backend implementation status: https://github.com/bhsei/26A/tree/main/src/backend |
+| R36 | Authoritative frontend-to-backend API contract: `docs/design/API_CONTRACT.md` |
 | R2 | Software Requirements Specification v1.0, 18 November 2026: https://github.com/bhsei/26A/blob/8c9e2e73a624f6419d1aad1275f3effd81dfde0a/docs/requirements/SRS.md |
 | R3 | OpenAPI 3.0.3 contract baseline, API v0.1.0: https://github.com/bhsei/26A/blob/8c9e2e73a624f6419d1aad1275f3effd81dfde0a/docs/design/openapi.yaml |
 | R4 | Database Design v0.4, including planned Neo4j projection: https://github.com/bhsei/26A/blob/8c9e2e73a624f6419d1aad1275f3effd81dfde0a/docs/design/database.md |
@@ -1087,22 +1062,25 @@ The appendices provide the actionable crosswalk and the check results behind the
 
 ## A.1 API Contract Crosswalk
 
-Read the Android proposal, published OpenAPI and registered Fastify behavior as separate records. The inventory summarizes route status; the notes explain payload and authorization differences. [R2] [R3] [R6] [R8] [R9] [R11]
+Read the Android client, `docs/design/API_CONTRACT.md`, and the current Fastify implementation as separate records. `API_CONTRACT.md` is the authoritative frontend-to-backend integration contract. OpenAPI v0.1.0 remains a historical contract baseline. The inventory summarizes route status; the notes explain payload and authorization differences. [R2] [R3] [R6] [R8] [R9] [R11] [R35]
 
-### Table 4: Android proposal, OpenAPI and observed Fastify routes
+### Table 4: Android client, API contract, and current backend implementation
 
-| Operation | Android proposal | OpenAPI v0.1.0 | Observed Fastify |
+| Operation | Android client expectation | `API_CONTRACT.md` | Current backend implementation |
 |---|---|---|---|
-| Register / login | `POST /auth/register`; `POST /auth/login` | Same paths; registration fields, role casing and token key differ. | Both are 501 stubs. |
-| Session | `GET /auth/me`; `POST /auth/logout` | Not specified. | Both absent (404). |
-| Profile | `GET`/`PUT /candidate/profile` | `GET`/`PUT /candidates/me` | Both path families absent (404). |
-| Feed / swipe | `GET /candidate/feed`; `POST /candidate/swipes` | `GET /candidates/me/feed`; `POST /candidates/me/swipes` | Android 404; OpenAPI paths 501. |
-| Recruiter cards | `GET`/`POST /recruiter/cards` | `GET`/`POST /recruiters/me/cards` | Both path families absent (404). |
-| Interest / decision / matches | `GET /recruiter/interested`; `POST /recruiter/interested/{swipeId}/decision`; `GET /matches` | Not specified. | All three paths absent (404). |
-| Internal ranking | Not called directly. | `POST /internal/matching/rank` | 404. Express separately serves `GET /feed/:candidateId`. |
-| Health / readiness | Not called directly. | `GET /health`; `GET /ready` | Static 200. No PostgreSQL readiness check. |
+| Register | `POST /auth/register`; consent and recruiter company fields | Authoritative request, response, validation, and consent contract | Implemented per backend README; verify route path, status code, and fields |
+| Login | `POST /auth/login` | Authoritative credential and token contract | Implemented per backend README; verify route path and status code |
+| Session | `GET /auth/me`; `POST /auth/logout` | Authoritative session and revocation contract | Verify route paths, token validation, and revocation |
+| Profile | `GET` / `PUT /candidate/profile` | Authoritative profile contract | Implemented per backend README; verify route path and DTO parity |
+| Feed | Candidate feed request | Authoritative ranked-feed, pagination, score, and fallback contract | Implemented per backend README; verify route path, matching call, and fallback |
+| Swipe | Candidate swipe with `Idempotency-Key` | Authoritative swipe, action, and idempotency contract | Implemented per backend README; verify route path, actions, and replay behavior |
+| Recruiter cards | `GET` / `POST /recruiter/cards` | Authoritative card and company-ownership contract | Implemented per backend README; verify route path and authorization |
+| Interested / decision | Recruiter interested list and `ACCEPT` / `DECLINE` | Authoritative decision and match-creation contract | Implemented per backend README; verify route path, authorization, and atomicity |
+| Matches | `GET /matches` | Authoritative participant-scoped match contract | Implemented per backend README; verify route path and visibility |
+| Internal ranking | Not called directly by Android | Authoritative gateway-to-matching-service contract | Gateway calls matching service with one-second timeout and recent-feed fallback |
+| Health / readiness | Not called directly by Android | Operational contract | Gateway health and readiness available; verify dependency probing |
 
-**Registration and login.** Android and OpenAPI both name `POST /auth/register` and `POST /auth/login`; checked-in handlers return 501. Android registers with email, password, role (`candidate`/`recruiter`), `displayName`, `ageConfirmed`, `privacyAccepted` and, for recruiters, `companyName` and `companySector`. The SRS places company creation on first sign-in for a recruiter without membership and allows joining by invitation. OpenAPI defines uppercase roles, email/password for login, and no consent/company/display fields in registration. It specifies a 12-character minimum password for registration; the SRS rejects under 8. Android expects `{user,token}`; OpenAPI specifies `{accessToken,user}`. Reconcile the registration fields, membership timing and password rule before implementing server acceptance. [R2] [R3] [R6] [R7] [R8] [R9]
+**Registration and login.****Registration and login.** Android and `API_CONTRACT.md` both define `POST /auth/register` and `POST /auth/login`. The backend README states that JWT authentication and the candidate/recruiter product routes are implemented; route parity and status codes must be verified against the current handlers. Android registers with email, password, role (`candidate`/`recruiter`), `displayName`, `ageConfirmed`, `privacyAccepted` and, for recruiters, `companyName` and `companySector`. The SRS places company creation on first sign-in for a recruiter without membership and allows joining by invitation. OpenAPI defines uppercase roles, email/password for login, and no consent/company/display fields in registration. It specifies a 12-character minimum password for registration; the SRS rejects under 8. Android expects `{user,token}`; OpenAPI specifies `{accessToken,user}`. Reconcile the registration fields, membership timing and password rule before implementing server acceptance. [R2] [R3] [R6] [R7] [R8] [R9]
 
 **Session.** `GET /auth/me` returns an expected `{user}` wrapper in the client. `POST /auth/logout` is best effort and its response body is ignored. Neither route exists in OpenAPI or Fastify at this revision. JWT issuance, expiry of at most 24 hours and revocation on logout/deletion are server-side SRS obligations. [R2] [R3] [R6] [R7] [R9]
 
@@ -1124,7 +1102,9 @@ Read the Android proposal, published OpenAPI and registered Fastify behavior as 
 
 ## A.2 Verification and Acceptance Gates
 
-**Checks run for this SAD.** At the pinned revision, Node.js 22.23.5 compiled both TypeScript services and all 26 backend Vitest checks passed (3 Fastify foundation and 23 synthetic seed tests). Prisma client generation, schema validation and backend type checking passed without a running database. The 23 in-process Fastify probes returned two static 200 responses, four 501 stubs and seventeen 404s for absent routes. Each response echoed the supplied `X-Request-ID`. These checks did not exercise a live database, Android or the Express HTTP endpoint. [R1] [R9] [R10] [R11] [R17] [R27] [R32]
+**Checks recorded for the prior snapshot.** At commit `8c9e2e7`, Node.js 22.23.5 compiled both TypeScript services and all 26 backend Vitest checks passed (3 Fastify foundation and 23 synthetic seed tests). Prisma client generation, schema validation and backend type checking passed without a running database. The 23 in-process Fastify probes returned two static 200 responses, four 501 stubs and seventeen 404s for absent routes. Each response echoed the supplied `X-Request-ID`. These checks did not exercise a live database, Android, or the Express HTTP endpoint. [R1] [R9] [R10] [R11] [R17] [R27] [R32]
+
+**Current-main verification requirement.** The prior results do not establish the current backend implementation. Before this SAD is accepted as current-main architecture evidence, rerun the backend and matching-service checks at the current commit, record the exact commands and environment, exercise a live PostgreSQL database, run Android contract tests, and retain CI or test-report evidence. [R35]
 
 **Not executed or not established:** Android SDK/emulator build and JVM contract tests, live PostgreSQL migration and seed, end-to-end product flow, Neo4j pipeline, load behavior, deployed TLS, full log review and automated GitHub checks. Existing Android fixture tests validate serialization only; the backlog’s OpenAPI lint evidence applies to the older file, not client parity. [R14] [R18] [R19] [R25] [R29]
 
