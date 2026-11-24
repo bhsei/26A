@@ -1,10 +1,10 @@
 # Database Design
 ## For AdoptAJob
 
-Version 0.4  
+Version 0.5  
 Prepared by Alba (Qiu Runxiao), database owner  
 Software Engineering course, Team A (repository `bhsei/26A`)  
-2026-11-18
+2026-11-24
 
 ## Table of Contents
 <!-- TOC -->
@@ -27,17 +27,18 @@ Software Engineering course, Team A (repository `bhsei/26A`)
 | Alba (Qiu Runxiao) | 2026-11-10 | Align with SRS v0.8 for the MVP: flags become swipe actions, Company Card likes carry no decision, Job Card fields enforced, invitation codes added, cards soft-deleted, only recruiters belong to a company | 0.2 |
 | Alba (Qiu Runxiao) | 2026-11-11 | Open issues: closed 3 and 6; recorded the decisions on 8 (deleted accounts in matches), 10 (18+ confirmation) and the schema part of 11 (one match per accepting recruiter) | 0.3 |
 | Alba (Qiu Runxiao) | 2026-11-18 | Neo4j graph store aligned with SRS v1.0 (REQ-ML-008): deletion step before every rebuild, rebuild without wiping, count reconciliation, deleted cards and company sector not copied, card kind added | 0.4 |
+| Alba (Qiu Runxiao) | 2026-11-24 | Document migration `20261121180737_match_per_recruiter` (Jean-Baptiste): one match per accepting recruiter, `users.age_confirmed` and `users.privacy_accepted`, idempotent swipes, `revoked_tokens` table for sign-out; open issues 7, 10 and 11 updated; architecture reference moved to the SAD | 0.5 |
 
 ## 1. Purpose and Scope
 
 This document describes how AdoptAJob stores its data and why. It covers the
-PostgreSQL schema that is implemented (migrations `20261016045740_init` and
-`20261110042731_mvp_schema_alignment`) and the Neo4j graph store the team has
-agreed to add.
+PostgreSQL schema that is implemented (migrations `20261016045740_init`,
+`20261110042731_mvp_schema_alignment` and `20261121180737_match_per_recruiter`)
+and the Neo4j graph store the team has agreed to add.
 
-It complements the [architecture document](Architecture_Design.md), section
-6.2, which asks for tables, indexes, constraints and relationships to be
-documented alongside the schema. The schema itself is code and lives in
+It complements the [Software Architecture Document](SAD.md), section 3.4
+(Data View), which describes data authority and access boundaries between the
+services. The schema itself is code and lives in
 [`src/backend/prisma/schema.prisma`](../../src/backend/prisma/schema.prisma);
 the SQL that creates it is in
 [`src/backend/prisma/migrations/`](../../src/backend/prisma/migrations/).
@@ -78,7 +79,7 @@ arrows point to the enumeration a column uses.
 
 | Table | Purpose | Key fields | SRS |
 |-------|---------|------------|-----|
-| `users` | Candidates and recruiters | `email` (unique), `password_hash`, `role`, `company_id`, `privacy_consent_at`, `privacy_notice_version` | REQ-FUNC-001..004, REQ-SEC-001, REQ-COMP-001 |
+| `users` | Candidates and recruiters | `email` (unique), `password_hash`, `role`, `company_id`, `privacy_consent_at`, `privacy_notice_version`, `age_confirmed`, `privacy_accepted` | REQ-FUNC-001..004, REQ-SEC-001, REQ-COMP-001 |
 | `companies` | Company shared by one or more recruiters | `name`, `sector` | REQ-FUNC-003, REQ-ML-002 |
 | `invitation_codes` | Single-use codes to join an existing company | `company_id`, `code` (unique), `created_by_id`, `used_by_id`, `used_at` | REQ-FUNC-025 |
 | `candidate_profiles` | Optional candidate background | `education_level`, `years_experience` (all nullable) | REQ-FUNC-005..006 |
@@ -86,11 +87,12 @@ arrows point to the enumeration a column uses.
 | `card_tags` | Tags of a card | `card_id`, `tag_id` | REQ-FUNC-008, REQ-ML-001 |
 | `candidate_tags` | Desired roles, skills, locations and contract types of a candidate | `candidate_id`, `tag_id` | REQ-FUNC-005, REQ-ML-001 |
 | `cards` | Company and job cards | `kind`, `status` (draft, published, unpublished, deleted), `title`, `description`, `location`, `contract_type`, salary range, `perks`, `image_url`, `published_at` | REQ-FUNC-008..011 |
-| `swipes` | One action per candidate and card (like, pass, green flag or red flag); likes on Job Cards carry the recruiter decision | `action`, `decision` (pending, accepted, declined), `decided_at` | REQ-FUNC-011..017, REQ-REL-001, REQ-ML-003..004 |
-| `matches` | Accepted likes | `candidate_id`, `recruiter_id`, `card_id`, `ended_at` | REQ-FUNC-017..019, REQ-FUNC-022, REQ-ML-006 |
+| `swipes` | One action per candidate and card (like, pass, green flag or red flag); likes on Job Cards carry the recruiter decision | `action`, `decision` (pending, accepted, declined), `decided_at`, `idempotency_key` | REQ-FUNC-011..017, REQ-REL-001, REQ-ML-003..004 |
+| `matches` | Accepted likes, one per accepting recruiter | `candidate_id`, `recruiter_id`, `card_id`, `ended_at` | REQ-FUNC-017..019, REQ-FUNC-022, REQ-ML-006 |
 | `messages` | Chat messages inside a match | `body` (max 1,000 characters) | REQ-FUNC-020 |
 | `applications` | Application message and CV reference | `message`, `cv_storage_key`, `cv_size_bytes` | REQ-FUNC-021 |
 | `reports` | User reports for moderation | `target_type`, `target_id`, `reason` | REQ-FUNC-023 |
+| `revoked_tokens` | Access tokens revoked at sign-out, kept until they expire | `jti` (primary key, the token's UUID), `expires_at`, `revoked_at` | REQ-SEC-002 |
 
 ### 3.2 Modelling decisions
 
@@ -104,6 +106,9 @@ arrows point to the enumeration a column uses.
 | Any swipe removes the card from the feed, flags included. | REQ-FUNC-011, REQ-FUNC-014 and REQ-FUNC-015. |
 | Only likes on Job Cards carry a recruiter decision. | REQ-FUNC-012: a like on a Company Card is a ranking signal only and adds the candidate to no interested-candidates list. The backend sets `PENDING` from the card kind; a `CHECK` only guarantees that passes and flags never carry a decision, because a `CHECK` cannot read the card's kind. |
 | A match is created only by a recruiter accepting a like. | REQ-ML-006: the final decision is always the recruiter's. |
+| Several recruiters of the same company can each match the same candidate on the same Job Card. | REQ-FUNC-017: each accepting recruiter gets their own match and chat. The recruiter decision itself is still one per swipe (open issue 11). |
+| A swipe request carries a client-generated `Idempotency-Key` (UUID v4) stored in `swipes.idempotency_key`. | REQ-REL-001: if the app retries a request, the backend finds the existing row by `(candidate_id, idempotency_key)` and returns it instead of failing or creating a second swipe. The column is nullable so rows created by the seed and older code stay valid. |
+| Sign-out stores the token's `jti` in `revoked_tokens`; the backend rejects any token whose `jti` is there. | REQ-SEC-002. Access tokens are stateless JWTs, so a short denylist is the smallest change that invalidates one token. A row is only useful until `expires_at`, which is indexed for cleanup. The table has no foreign key to `users`, so it holds no personal data. |
 | `reports.target_id` has no foreign key. | A report must survive the deletion of the card, user or message it points to. |
 | CV files are stored outside the database. | Only the storage key and size are kept; large binary files do not belong in PostgreSQL. |
 | Primary keys are UUIDs generated by PostgreSQL (`gen_random_uuid()`), except `tags` (integer). | IDs cannot be guessed from the API, and rows inserted with plain SQL (seed, tests) get IDs too. Tags are a small internal list. |
@@ -117,7 +122,8 @@ migration.
 | Rule | Constraint | SRS |
 |------|------------|-----|
 | One swipe (like, pass or flag) per candidate and card; a retried request does not create a second row | `UNIQUE (candidate_id, card_id)` on `swipes` | REQ-FUNC-011, REQ-REL-001 |
-| One match per candidate and card | `UNIQUE (candidate_id, card_id)` on `matches` | REQ-FUNC-017 |
+| A retried swipe request with the same idempotency key returns the original swipe | `UNIQUE (candidate_id, idempotency_key)` on `swipes` (several `NULL` keys are allowed) | REQ-REL-001 |
+| One match per candidate, recruiter and card | `UNIQUE (candidate_id, recruiter_id, card_id)` on `matches` | REQ-FUNC-017 |
 | One application per match | `UNIQUE (match_id)` on `applications` | REQ-FUNC-021 |
 | Only likes carry a decision; passes and flags never do | `swipes_decision_check` | REQ-FUNC-012, REQ-FUNC-017 |
 | A decision time needs a decision | `swipes_decided_at_check` | REQ-FUNC-017 |
@@ -132,7 +138,10 @@ migration.
 
 Rules that need other tables are validated by the backend: every card has at
 least one tag, and a like gets a `PENDING` decision only when the card is a Job
-Card.
+Card. Registration is refused unless the request confirms both the 18+ age
+check and the privacy notice; the backend then stores `age_confirmed` and
+`privacy_accepted` as `true`. The database defaults both to `false` and has no
+`CHECK` that they are `true`.
 
 ## 5. Indexes
 
@@ -140,13 +149,17 @@ Card.
 |-------|---------|-----|
 | `cards (status, published_at DESC)` | Published cards for the feed; most-recent fallback and cold start | REQ-FUNC-011, REQ-REL-002, REQ-ML-002 |
 | `swipes (candidate_id, card_id)` (unique) | Excluding cards a candidate already swiped | REQ-FUNC-011 |
+| `swipes (candidate_id, idempotency_key)` (unique) | Finding the swipe of a retried request | REQ-REL-001 |
 | `swipes (card_id, action, decision)` | Interested-candidates list per card; flag signals for ranking | REQ-FUNC-016, REQ-ML-003..004 |
 | `invitation_codes (code)` (unique), `invitation_codes (company_id)` | Looking up a code; listing a company's codes | REQ-FUNC-025 |
 | `card_tags (tag_id)`, `candidate_tags (tag_id)` | Finding cards that share tags | REQ-ML-001 |
+| `matches (candidate_id, recruiter_id, card_id)` (unique) | One match per accepting recruiter | REQ-FUNC-017 |
 | `matches (recruiter_id, created_at DESC)`, `matches (candidate_id, created_at DESC)` | Matches list, most recent first | REQ-FUNC-019 |
 | `messages (match_id, created_at)` | Loading a chat in order | REQ-FUNC-020 |
 | `users (company_id)`, `cards (company_id)` | Company members and cards | REQ-FUNC-003, REQ-SEC-003 |
 | `reports (target_type, target_id)` | Finding reports about one target | REQ-FUNC-023 |
+| `revoked_tokens (jti)` (primary key) | Checking whether a token was revoked, on every authenticated request | REQ-SEC-002 |
+| `revoked_tokens (expires_at)` | Removing expired rows (no cleanup job exists yet, open issue 7) | REQ-SEC-002 |
 
 ## 6. Privacy and Deletion
 
@@ -158,7 +171,10 @@ Card.
 - **Passwords** are stored only as adaptive hashes (`password_hash`,
   REQ-SEC-001); hashing is done by the backend.
 - **Consent** is recorded with a timestamp and the privacy-notice version
-  (REQ-COMP-001).
+  (REQ-COMP-001), plus the `privacy_accepted` flag. The 18+ confirmation is
+  stored as `age_confirmed` (REQ-FUNC-001).
+- **Sign-out** (REQ-SEC-002) stores only the token's random `jti` and expiry
+  in `revoked_tokens`, with no link to the user.
 - **Synthetic data only** in development, tests and the repository
   (REQ-ML-005). No real personal data is committed.
 - **Neo4j** stores only the minimized identifiers, tags, status, publish date,
@@ -288,9 +304,9 @@ To change the schema:
 | 4 | Implement the Neo4j pipeline, including freshness, retry, idempotency and deletion checks. | Alba, Levis | Open |
 | 5 | Load synthetic seed data with overlapping candidate likes so graph ranking has patterns to find. | Alba, Nils | In progress: `npm run db:seed` creates shared likes from matching backgrounds; Nils to confirm they are enough for REQ-ML-007. |
 | 6 | Confirm the GDPR retention and deletion policy for both stores. | Team | Closed (2026-11-11): duplicate of SRS Appendix B issue 1, closed by REQ-FUNC-004 (24 h deletion), REQ-COMP-001 (retention periods) and REQ-ML-008. |
-| 7 | Decide how sign-out and account deletion invalidate tokens (REQ-SEC-002); a `users.tokens_valid_after` column is proposed. | Alba, Jean-Baptiste | Open |
+| 7 | Decide how sign-out and account deletion invalidate tokens (REQ-SEC-002); a `users.tokens_valid_after` column is proposed. | Alba, Jean-Baptiste | Partly done (2026-11-21): sign-out is implemented with the `revoked_tokens` denylist (migration `20261121180737_match_per_recruiter`). Still open: invalidating all of a user's tokens on account deletion, and a job that removes rows past `expires_at` (nothing deletes them yet, so the table only grows). |
 | 8 | Keep matches visible as "Account deleted" for the other party (REQ-FUNC-004). Related: SRS open issues 6 (what remains of a deleted account) and 11 (Iteration 1 criteria). | Alba, Jean-Baptiste | Decided (2026-11-11), migration pending: `matches.candidate_id` and `matches.recruiter_id` become nullable with `ON DELETE SET NULL`; a `CHECK` keeps at least one of them set, and the backend removes a match when both parties are deleted. The app shows "Account deleted" when the other party's column is `NULL`, so no identifier of the deleted user remains. The deleted user's messages still cascade through `messages.sender_id`. Because `applications` hang off the match and would no longer cascade, the deletion transaction removes the deleted candidate's applications and CV files explicitly. Proposed to the team as the answer to SRS issue 6. |
 | 9 | Record inactivity for the 12-month retention rule (REQ-COMP-001), e.g. `users.last_active_at`. | Alba, Jean-Baptiste | Open |
-| 10 | Record the 18+ confirmation given at registration (REQ-FUNC-001). | Alba, Jean-Baptiste | Decided (2026-11-11), migration pending: `users.adult_confirmed_at timestamptz NOT NULL`, set by the backend at registration, following the `privacy_consent_at` pattern. Iteration 1. |
-| 11 | Allow one match per accepting recruiter (REQ-FUNC-017). The SRS must also say how a second recruiter can accept a candidate that REQ-FUNC-016 already removed from the interested list. Iteration 2. | Alba, Jean-Baptiste | Schema decided (2026-11-11), migration pending: `matches` gets `UNIQUE (candidate_id, card_id, recruiter_id)`, and recruiter decisions move from `swipes.decision`/`decided_at` to a new `recruiter_decisions` table (`swipe_id`, `recruiter_id`, `decision`, `decided_at`, `UNIQUE (swipe_id, recruiter_id)`), because one decision per swipe allows only one decision per company. The interested-list rule (REQ-FUNC-016) stays open as a team question in the SRS. |
+| 10 | Record the 18+ confirmation given at registration (REQ-FUNC-001). | Alba, Jean-Baptiste | Implemented differently (2026-11-21): migration `20261121180737_match_per_recruiter` adds `users.age_confirmed boolean NOT NULL DEFAULT false` (and `privacy_accepted`), not the decided `adult_confirmed_at timestamptz NOT NULL`. The flag records that the user confirmed but not when; `users.created_at` gives the same time for now, because the backend refuses registration without the confirmation. To confirm with Jean-Baptiste whether the boolean is enough or a timestamp is still needed. |
+| 11 | Allow one match per accepting recruiter (REQ-FUNC-017). The SRS must also say how a second recruiter can accept a candidate that REQ-FUNC-016 already removed from the interested list. Iteration 2. | Alba, Jean-Baptiste | Partly done (2026-11-21): migration `20261121180737_match_per_recruiter` replaces `UNIQUE (candidate_id, card_id)` on `matches` with `UNIQUE (candidate_id, recruiter_id, card_id)`. Still pending from the 2026-11-11 decision: recruiter decisions move from `swipes.decision`/`decided_at` to a new `recruiter_decisions` table (`swipe_id`, `recruiter_id`, `decision`, `decided_at`, `UNIQUE (swipe_id, recruiter_id)`), because one decision per swipe allows only one decision per company. The interested-list rule (REQ-FUNC-016) stays open as a team question in the SRS. |
 | 12 | Store what each user has already seen, so the app can show match and like indicators (REQ-FUNC-018, REQ-FUNC-024). Iteration 2. | Alba, Jean-Baptiste | Open |

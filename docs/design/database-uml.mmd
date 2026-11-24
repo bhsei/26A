@@ -17,6 +17,8 @@ classDiagram
     uuid company_id FK ?
     timestamptz privacy_consent_at
     varchar20 privacy_notice_version
+    boolean age_confirmed
+    boolean privacy_accepted
     timestamptz created_at
     timestamptz updated_at
   }
@@ -83,8 +85,10 @@ classDiagram
     swipe_action action
     recruiter_decision decision ?
     timestamptz decided_at ?
+    varchar36 idempotency_key ?
     timestamptz created_at
     UQ candidate_id + card_id
+    UQ candidate_id + idempotency_key
   }
   class matches {
     uuid id PK
@@ -93,7 +97,7 @@ classDiagram
     uuid card_id FK
     timestamptz created_at
     timestamptz ended_at ?
-    UQ candidate_id + card_id
+    UQ candidate_id + recruiter_id + card_id
   }
   class messages {
     uuid id PK
@@ -213,3 +217,11 @@ classDiagram
   swipes ..> swipe_action
   swipes ..> recruiter_decision
   reports ..> report_target
+
+  %% Standalone table: no foreign keys, so it holds no link to a user.
+  class revoked_tokens {
+    varchar36 jti PK
+    timestamptz expires_at
+    timestamptz revoked_at
+  }
+  note for revoked_tokens "No foreign keys: holds no link to a user"
